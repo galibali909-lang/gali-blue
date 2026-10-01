@@ -12,7 +12,7 @@ import { money } from "@/lib/domain";
 
 export function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const reduced = useReducedMotion();
-  return <motion.div className={className} initial={reduced ? false : { opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px 0px -30px 0px" }} transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}>{children}</motion.div>;
+  return <motion.div className={className} initial={reduced ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px 0px -30px 0px" }} transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}>{children}</motion.div>;
 }
 export function SiteNav() {
   const [open, setOpen] = useState(false);
@@ -30,7 +30,7 @@ export function Hero({ content }: { content: SiteContent }) {
   const reduced = useReducedMotion();
   const section = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: section, offset: ["start start", "end start"] });
-  const photographY = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
+  const photographY = useTransform(scrollYProgress, [0, 1], ["0%", "6%"]);
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   useEffect(() => {

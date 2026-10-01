@@ -31,7 +31,7 @@ export function Entrance({ content }: { content: SiteContent }) {
     element.removeAttribute("open");
     element.showModal();
     element.dataset.ready = "true";
-    const timeout = window.setTimeout(finish, 3800);
+    const timeout = window.setTimeout(finish, 3200);
     const onPreferenceChange = () => { if (preference.matches) finish(); };
     preference.addEventListener("change", onPreferenceChange);
     return () => {
