@@ -114,6 +114,7 @@ ou remplacer ce stockage par un service objet avant mise en production.
 npm.cmd run check
 npm.cmd run test:ui
 npm.cmd run test:design
+npm.cmd run test:navigation
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -129,6 +130,13 @@ une base locale de test ; le test restaure les reglages qu'il modifie.
 l'entree automatique, Passer/Echap, le defilement, les menus au clavier et sur mobile,
 le mode mouvements reduits, cinq formats d'ecran et l'absence de liens personnels.
 Il ne modifie pas la base. Captures de l'entree et du nouveau design dans storage/checks.
+
+`test:navigation` cible les liens publics sur ordinateur/mobile : carte en haut,
+ancres, logos, historique, galerie, filtres et absence de repetition de l'entree.
+Il releve les erreurs du navigateur sans creer de reservation ni modifier la base.
+Les liens vers une nouvelle page repartent en haut ; les ancres rejoignent leur section.
+Precedent/Suivant conservent la restauration du navigateur. L'introduction ne joue qu'au
+premier chargement direct de l'accueil sans ancre, jamais pendant la navigation interne.
 
 L'override deepmerge-ts >=8 corrige une alerte transitive de Prisma CLI. Le schema,
 les tests et le build doivent etre revalides lors d'une mise a jour de Prisma.

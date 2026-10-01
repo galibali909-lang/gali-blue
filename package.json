@@ -11,6 +11,7 @@
     "test": "tsx --env-file=.env --test tests/*.test.ts",
     "test:ui": "tsx --env-file=.env scripts/verify-ui.ts",
     "test:design": "tsx --env-file=.env scripts/verify-design.ts",
+    "test:navigation": "tsx --env-file=.env scripts/verify-navigation.ts",
     "check": "node --env-file=.env scripts/check.mjs",
     "db:init": "node --env-file=.env scripts/init-db.mjs",
     "db:deploy": "prisma migrate deploy",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { SiteLink as Link } from "./site-navigation";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, CreditCard, LoaderCircle, Phone, ShieldCheck, Utensils } from "lucide-react";
 import type { PublicData } from "@/lib/public-data";
 import { calculatePrice, dateLabel, money } from "@/lib/domain";

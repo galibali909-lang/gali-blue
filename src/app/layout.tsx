@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { SiteNavigationProvider } from "@/components/site-navigation";
 import "./globals.css";
 import "./public-design.css";
 
@@ -29,8 +30,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${sans.variable} ${display.variable} ${editorial.variable}`}>
-      <body>{children}</body>
+    <html lang="fr" data-scroll-behavior="smooth" className={`${sans.variable} ${display.variable} ${editorial.variable}`}>
+      <body><SiteNavigationProvider>{children}</SiteNavigationProvider></body>
     </html>
   );
 }

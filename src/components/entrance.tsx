@@ -1,24 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { SiteContent } from "@/lib/content";
+import { useSiteNavigation } from "./site-navigation";
 import "./entrance.css";
 
 export function Entrance({ content }: { content: SiteContent }) {
+  const { entranceAllowed, dismissEntrance } = useSiteNavigation();
+  return entranceAllowed ? <EntranceDialog content={content} onFinish={dismissEntrance}/> : null;
+}
+
+function EntranceDialog({ content, onFinish }: { content: SiteContent; onFinish: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const finishEntry = useRef<() => void>(() => {});
+  const onFinishRef = useRef(onFinish);
+  useLayoutEffect(() => { onFinishRef.current = onFinish; });
 
   function enter() {
     finishEntry.current();
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = dialog.current;
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!element) return;
-    if (preference.matches) { element.close(); return; }
+    if (preference.matches || window.location.hash) { element.close(); return; }
     let finished = false;
     const finish = () => {
       if (finished) return;
@@ -26,8 +34,10 @@ export function Entrance({ content }: { content: SiteContent }) {
       window.clearTimeout(timeout);
       element.close();
       delete element.dataset.ready;
+      onFinishRef.current();
     };
     finishEntry.current = finish;
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     element.removeAttribute("open");
     element.showModal();
     element.dataset.ready = "true";
@@ -37,7 +47,8 @@ export function Entrance({ content }: { content: SiteContent }) {
     return () => {
       window.clearTimeout(timeout);
       preference.removeEventListener("change", onPreferenceChange);
-      finish();
+      element.close();
+      delete element.dataset.ready;
     };
   }, []);
 
