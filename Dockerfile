@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV LOCAL_SETUP_ENABLED=false
+ENV PORT=8080
 COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/public ./public
@@ -24,5 +25,5 @@ COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/deployment/bootstrap-admin.json ./deployment/bootstrap-admin.json
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json /app/next.config.ts /app/tsconfig.json ./
 RUN mkdir -p storage/uploads && chown -R node:node storage && sed -i 's/\r$//' scripts/docker-entrypoint.sh
-EXPOSE 3000
+EXPOSE 8080
 ENTRYPOINT ["/usr/bin/tini", "--", "/bin/sh", "scripts/docker-entrypoint.sh"]

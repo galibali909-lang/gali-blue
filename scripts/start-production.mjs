@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { configureProductionEnvironment } from "./production-env.mjs";
 
 function run(script, args) {
   const result = spawnSync(process.execPath, [script, ...args], { stdio: "inherit", env: process.env });
@@ -6,7 +7,8 @@ function run(script, args) {
 }
 
 try {
-  if (!process.env.DATABASE_URL?.startsWith("mysql://")) throw new Error("DATABASE_URL MySQL requis.");
+  const databaseSource = configureProductionEnvironment(process.env);
+  console.log(`Configuration MySQL chargee depuis ${databaseSource}. Port HTTP : ${process.env.PORT}.`);
   if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32 || process.env.SESSION_SECRET.startsWith("REPLACE_")) throw new Error("SESSION_SECRET aleatoire de 32 caracteres minimum requis.");
   const origin = new URL(process.env.APP_ORIGIN || "");
   if (origin.protocol !== "https:" || origin.origin !== process.env.APP_ORIGIN) throw new Error("APP_ORIGIN doit etre l'origine HTTPS publique, sans slash final.");

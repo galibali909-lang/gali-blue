@@ -9,15 +9,16 @@ Le fichier github, les tokens, .env, les comptes locaux et les reservations ne s
 1. Creer un projet Railway et ajouter un service MySQL.
 2. Ajouter un service depuis le depot GitHub et autoriser Railway a lire ce depot.
 3. Garder la racine du depot comme Root Directory : le dossier gali-blue est deja la racine du depot. Railway detecte le Dockerfile.
-4. Generer un domaine dans Settings > Networking. Ajouter les variables ci-dessous avant le premier demarrage reussi.
+4. Le domaine actuel est `gali-blue-production.up.railway.app`. Dans Settings > Networking, utiliser le port cible `8080`. Ajouter les variables ci-dessous au service web avant le premier demarrage reussi.
 5. Ajouter un volume au service web monte sur `/app/storage`. Les photos et videos importees seront dans `/app/storage/uploads`.
 6. Choisir `/api/health` comme Healthcheck Path, avec un delai de 300 secondes. Conserver une seule instance avec ce stockage local.
-7. Deployer. Ne pas definir de Start Command : le Dockerfile lance le script de demarrage. Next utilise automatiquement le PORT fourni par Railway et ecoute sur 0.0.0.0.
+7. Deployer. Ne pas definir de Start Command : le Dockerfile lance le script de demarrage. Next utilise PORT (8080 par defaut) et ecoute sur 0.0.0.0. Si PORT est modifie dans Railway, adapter aussi le port cible du domaine.
 
 | Variable | Valeur |
 | --- | --- |
-| DATABASE_URL | `${{MySQL.MYSQL_URL}}` (adapter MySQL si le service a un autre nom) |
-| APP_ORIGIN | L'URL HTTPS exacte du site, sans slash final |
+| DATABASE_URL | Recommande : `${{MySQL.MYSQL_URL}}` (adapter MySQL si le service a un autre nom) |
+| APP_ORIGIN | `https://gali-blue-production.up.railway.app` (sans slash final) |
+| PORT | `8080`, identique au port cible du domaine |
 | SESSION_SECRET | Une valeur aleatoire privee d'au moins 32 caracteres |
 | LOCAL_SETUP_ENABLED | `false` |
 | ADMIN_EMAIL | Facultatif : remplace l'identifiant initial `admin@gali-blue.test` |
@@ -32,6 +33,28 @@ node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'
 
 Un exemple sans secret est disponible dans `deployment/railway.env.example`.
 L'acces a la base peut rester prive ; aucun proxy MySQL public n'est necessaire.
+
+## Variables MySQL standard
+
+Le demarrage prepare DATABASE_URL avant les migrations, le seed et Next.js, dans cet ordre :
+
+1. DATABASE_URL, si deja renseignee.
+2. MYSQL_URL, si presente sur le service web.
+3. MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE et MYSQLPORT (3306 par defaut).
+
+Les identifiants des variables separees sont encodes pour conserver les caracteres speciaux.
+Les logs indiquent uniquement le nom des variables utilisees, jamais leur valeur.
+Une DATABASE_URL renseignee mais invalide est refusee, sans basculer silencieusement sur une autre base.
+
+Les variables doivent etre disponibles dans le service **web**, pas uniquement dans
+le service MySQL. Le moyen le plus direct est d'ajouter la reference
+`DATABASE_URL=${{MySQL.MYSQL_URL}}` dans les variables du service web.
+Ne pas utiliser localhost pour joindre le service MySQL distant.
+
+Le port HTTP 8080 n'est pas le port MySQL : conserver MYSQLPORT tel que fourni par la base.
+Si APP_ORIGIN est absente, le script utilise `https://${RAILWAY_PUBLIC_DOMAIN}` lorsque
+Railway fournit cette variable. SESSION_SECRET reste obligatoire et doit contenir
+au moins 32 caracteres aleatoires ; ne pas conserver la valeur d'exemple REPLACE_...
 
 ## Premier demarrage
 
@@ -53,8 +76,8 @@ connexion, avant toute utilisation reelle. Les redeploiements conservent le nouv
 Pour un acces personnalise des le premier demarrage, fournir vos propres variables
 ADMIN_EMAIL et ADMIN_PASSWORD. Retirer ADMIN_PASSWORD des variables une fois le compte cree.
 
-- Connexion : `https://VOTRE-DOMAINE/connexion`
-- Dashboard : `https://VOTRE-DOMAINE/dashboard`
+- Connexion : https://gali-blue-production.up.railway.app/connexion
+- Dashboard : https://gali-blue-production.up.railway.app/dashboard
 
 Le compte local `admin@gali-blue.local` / `admin` n'est pas cree ni copie sur Railway.
 Les mots de passe courts sont refuses par l'API en production.
