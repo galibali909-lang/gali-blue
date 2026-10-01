@@ -30,8 +30,11 @@ Pour le compte de test local demande, executer `npm.cmd run admin:local`.
 Identifiant : `admin@gali-blue.local`, mot de passe : `admin`.
 Ce script refuse les bases distantes et la production. Le compte est conserve uniquement
 dans la base locale ; ni le compte ni son hash ne sont exportes sur GitHub ou Railway.
-En production, le premier administrateur est initialise avec ADMIN_EMAIL et ADMIN_PASSWORD
-(16 caracteres minimum). La connexion refuse les mots de passe courts en production.
+Sur Railway, une base sans compte de connexion recoit un administrateur initial de recette
+`admin@gali-blue.test`, avec un mot de passe aleatoire remis separement au proprietaire.
+Seul son hash bcrypt est versionne. Changer ce mot de passe apres la premiere connexion.
+ADMIN_EMAIL et ADMIN_PASSWORD (16 caracteres minimum) permettent de choisir un autre
+acces initial. Aucun compte existant n'est reinitialise. La connexion refuse les mots de passe courts en production.
 
 La base dediee `gali_blue` a ete initialisee sur MariaDB 10.4, port 3306.
 Le compte MySQL root sans mot de passe est strictement une configuration locale.
@@ -50,8 +53,8 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 
 ## Fonctionnalites disponibles
 
-- Entree photographique visible dans le HTML initial avant l'hydratation, image prechargee puis apparition du nom et sortie en rideau apres environ 3,4 secondes. Passer ou Echap donnent un acces immediat ; aucune entree bloquante sans JavaScript ou en mode mouvements reduits.
-- Typographie Bodoni Moda / DM Sans, boutons animes, parallaxe de la photo et compositions editoriales adaptees au mobile.
+- Entree photographique visible dans le HTML initial avant l'hydratation, image prechargee puis apparition du nom et sortie en rideau apres environ 2,8 secondes. Passer ou Echap donnent un acces immediat ; aucune entree bloquante sans JavaScript ou en mode mouvements reduits.
+- Typographie Bodoni Moda / DM Sans, boutons arrondis, survols discrets, parallaxe legere et compositions editoriales adaptees au mobile.
 - Menu La maison et selecteur de convives Radix UI accessibles au clavier. Aucun lien personnel sur la vitrine ; connexion obligatoire pour le dashboard.
 - Calendrier de reservation francais React DayPicker dans un panneau Radix, avec dates passees et dates au-dela de la limite desactivees.
 - Carte filtree par categorie, galerie plein ecran, evenements publies et informations legales.

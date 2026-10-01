@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
 async function main() {
@@ -11,26 +12,27 @@ async function main() {
   }
   const db = new PrismaClient();
   try {
-    if (!localTest && await db.staff.count({ where: { role: "ADMIN", active: true, passwordHash: { not: null } } })) {
-      console.log("Administrateur existant conserve.");
+    if (!localTest && await db.staff.count({ where: { passwordHash: { not: null } } })) {
+      console.log("Comptes de connexion existants conserves. Aucun compte initial ajoute.");
       return;
     }
-    const email = z.email().parse(localTest ? "admin@gali-blue.local" : process.env.ADMIN_EMAIL).toLowerCase();
-    const password = localTest ? "admin" : z.string().min(16).max(72).refine(value => !value.startsWith("REPLACE_")).parse(process.env.ADMIN_PASSWORD);
-    const passwordHash = await hash(password, 12);
+    const initial = localTest ? null : z.object({ email: z.email(), passwordHash: z.string().regex(/^\$2b\$12\$[./A-Za-z0-9]{53}$/) }).parse(JSON.parse(await readFile(new URL("../deployment/bootstrap-admin.json", import.meta.url), "utf8")));
+    const email = z.email().parse(localTest ? "admin@gali-blue.local" : process.env.ADMIN_EMAIL || initial?.email).toLowerCase();
+    const customPassword = !localTest && process.env.ADMIN_PASSWORD ? z.string().min(16).max(72).refine(value => !value.startsWith("REPLACE_")).parse(process.env.ADMIN_PASSWORD) : null;
+    const passwordHash = localTest ? await hash("admin", 12) : customPassword ? await hash(customPassword, 12) : initial!.passwordHash;
     await db.$transaction(async transaction => {
       await transaction.$queryRaw`SELECT id FROM Settings WHERE id = 1 FOR UPDATE`;
-      if (!localTest && await transaction.staff.count({ where: { role: "ADMIN", active: true, passwordHash: { not: null } } })) return;
+      if (!localTest && await transaction.staff.count({ where: { passwordHash: { not: null } } })) return;
       const existing = await transaction.staff.findUnique({ where: { email } });
       if (existing && (!localTest || existing.name !== "Admin Test")) throw new Error("Cette adresse appartient deja a un compte. Aucun compte modifie.");
       await transaction.staff.upsert({ where: { email }, create: { email, name: localTest ? "Admin Test" : "Administrateur", job: localTest ? "Test local" : "Direction", role: "ADMIN", passwordHash }, update: { active: true, role: "ADMIN", passwordHash, sessionVersion: { increment: 1 } } });
-      await transaction.audit.create({ data: { actor: "Initialisation", action: "CREATION_ADMIN", detail: localTest ? "Compte administrateur de test local initialise." : "Premier administrateur initialise depuis les variables privees du serveur." } });
+      await transaction.audit.create({ data: { actor: "Initialisation", action: "CREATION_ADMIN", detail: localTest ? "Compte administrateur de test local initialise." : customPassword ? "Premier administrateur initialise depuis les variables privees du serveur." : "Administrateur de recette initialise depuis le hash du projet. Mot de passe a renouveler." } });
     });
     console.log(`Administrateur initialise : ${email}${localTest ? " (local uniquement)" : ""}`);
   } finally { await db.$disconnect(); }
 }
 
 main().catch(error => {
-  console.error(error instanceof z.ZodError ? "ADMIN_EMAIL valide et ADMIN_PASSWORD de 16 a 72 caracteres requis." : error instanceof Error ? error.message : "Initialisation impossible.");
+  console.error(error instanceof z.ZodError ? "Configuration initiale invalide. ADMIN_EMAIL doit etre valide et ADMIN_PASSWORD, si fourni, contenir 16 a 72 caracteres." : error instanceof Error ? error.message : "Initialisation impossible.");
   process.exitCode = 1;
 });

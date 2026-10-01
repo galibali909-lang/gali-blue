@@ -1,12 +1,13 @@
 # Deploiement Railway
 
-Le depot GitHub contient uniquement le code, le schema et les contenus de demonstration.
+Le depot GitHub contient le code, le schema, les contenus de demonstration et le hash
+bcrypt de l'acces initial de recette. Aucun mot de passe en clair n'y figure.
 Le fichier github, les tokens, .env, les comptes locaux et les reservations ne sont pas publies.
 
 ## Configuration
 
 1. Creer un projet Railway et ajouter un service MySQL.
-2. Ajouter un service depuis le depot GitHub prive et autoriser Railway a lire ce depot.
+2. Ajouter un service depuis le depot GitHub et autoriser Railway a lire ce depot.
 3. Garder la racine du depot comme Root Directory : le dossier gali-blue est deja la racine du depot. Railway detecte le Dockerfile.
 4. Generer un domaine dans Settings > Networking. Ajouter les variables ci-dessous avant le premier demarrage reussi.
 5. Ajouter un volume au service web monte sur `/app/storage`. Les photos et videos importees seront dans `/app/storage/uploads`.
@@ -19,8 +20,8 @@ Le fichier github, les tokens, .env, les comptes locaux et les reservations ne s
 | APP_ORIGIN | L'URL HTTPS exacte du site, sans slash final |
 | SESSION_SECRET | Une valeur aleatoire privee d'au moins 32 caracteres |
 | LOCAL_SETUP_ENABLED | `false` |
-| ADMIN_EMAIL | Votre adresse pour le premier administrateur |
-| ADMIN_PASSWORD | Un mot de passe unique de 16 a 72 caracteres |
+| ADMIN_EMAIL | Facultatif : remplace l'identifiant initial `admin@gali-blue.test` |
+| ADMIN_PASSWORD | Facultatif : remplace le mot de passe initial par une valeur unique de 16 a 72 caracteres |
 
 Renseigner les secrets directement dans les variables privees Railway, jamais dans GitHub.
 Exemple de generation de SESSION_SECRET dans un terminal prive :
@@ -38,14 +39,27 @@ Le conteneur execute successivement les migrations Prisma existantes, le seed de
 demonstration et la creation du premier administrateur, puis lance Next.js.
 Les executions suivantes ne changent pas les reglages ou mots de passe existants.
 Le seed remplit uniquement les collections de demonstration vides.
-Si un administrateur actif existe deja, ADMIN_PASSWORD ne le reinitialise pas.
-Apres la premiere connexion reussie, retirer ADMIN_PASSWORD des variables Railway.
+Si un compte de connexion existe deja, meme desactive, aucun compte initial n'est ajoute
+et aucun mot de passe n'est reinitialise. Une desactivation ne reactive donc pas l'acces initial.
+
+Sans ADMIN_EMAIL ni ADMIN_PASSWORD, le premier demarrage d'une base sans compte cree
+`admin@gali-blue.test` avec le mot de passe aleatoire remis au proprietaire du projet.
+Le conteneur ne dispose que de son hash bcrypt dans `deployment/bootstrap-admin.json`.
+Pour utiliser cet acces, supprimer les anciennes variables ADMIN_EMAIL/ADMIN_PASSWORD
+de demonstration (notamment les valeurs REPLACE_...), puis redeployer.
+
+Changer ce mot de passe dans Personnel > modifier l'administrateur apres la premiere
+connexion, avant toute utilisation reelle. Les redeploiements conservent le nouveau hash.
+Pour un acces personnalise des le premier demarrage, fournir vos propres variables
+ADMIN_EMAIL et ADMIN_PASSWORD. Retirer ADMIN_PASSWORD des variables une fois le compte cree.
 
 - Connexion : `https://VOTRE-DOMAINE/connexion`
 - Dashboard : `https://VOTRE-DOMAINE/dashboard`
 
 Le compte local `admin@gali-blue.local` / `admin` n'est pas cree ni copie sur Railway.
 Les mots de passe courts sont refuses par l'API en production.
+L'acces initial Railway est reserve a la recette. Le mot de passe en clair n'est pas
+recuperable depuis GitHub et n'est jamais affiche dans les logs du serveur.
 
 ## Base de donnees
 
