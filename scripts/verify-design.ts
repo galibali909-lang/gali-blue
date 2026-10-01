@@ -17,7 +17,7 @@ async function main() {
     await expect(page.locator(".entry-dialog")).toBeHidden({ timeout: 7000 });
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator(".entry-dialog[open]")).toBeVisible();
-    expect(await page.locator(".entry-dialog").evaluate(element => element.matches(":modal"))).toBe(true);
+    await expect.poll(() => page.locator(".entry-dialog").evaluate(element => element.matches(":modal"))).toBe(true);
     await expect(page.locator(".entry-dialog img")).toHaveJSProperty("complete", true);
     expect(await page.locator(".entry-dialog img").evaluate(image => (image as HTMLImageElement).naturalWidth > 0)).toBe(true);
     await page.locator(".entry-dialog").evaluate(element => {

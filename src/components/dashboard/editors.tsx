@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Check, ExternalLink, ImagePlus, Info, Pencil, Plus, Upload, LoaderCircle } from "lucide-react";
@@ -48,6 +48,7 @@ export function EventsView({ data, mutate }: Props) {
   return <><div className="section-toolbar"><h2>Agenda du restaurant</h2><button className="button blue small" onClick={() => setEditing({ title: "", date: dateLabel(new Date(), "yyyy-MM-dd"), time: "21:30", description: "", published: false })}><Plus size={16}/> Ajouter un evenement</button></div>{data.events.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>EVENEMENT</th><th>DATE</th><th>PUBLICATION</th><th/></tr></thead><tbody>{data.events.map(event => <tr key={event.id}><td><strong>{event.title}</strong></td><td>{dateLabel(event.date)}</td><td><Badge status={event.published ? "active" : "inactive"} label={event.published ? "Publie" : "Brouillon"}/></td><td><button className="icon-button" title="Modifier" aria-label={`Modifier ${event.title}`} onClick={() => setEditing({ ...event, date: dateLabel(event.date, "yyyy-MM-dd"), time: dateLabel(event.date, "HH:mm") })}><Pencil size={15}/></button></td></tr>)}</tbody></table></div> : <p className="empty-state">Aucun evenement pour le moment.</p>}{editing && <Modal title={editing.id ? "Modifier l'evenement" : "Nouvel evenement"} onClose={() => setEditing(null)}><FieldsForm initial={editing} fields={fields} onSave={async values => { await mutate("event", values); setEditing(null); }}/></Modal>}</>;
 }
 export function MediaView({ data, mutate, refresh }: Props & { refresh: () => Promise<void> }) {
+  const fileInput = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState<FormValues | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -62,7 +63,7 @@ export function MediaView({ data, mutate, refresh }: Props & { refresh: () => Pr
     } catch (error) { setError(error instanceof Error ? error.message : "Televersement impossible."); }
     finally { setBusy(false); }
   }
-  return <><div className="section-toolbar"><div><h2>Photos & videos</h2><small>JPEG, PNG, WebP : 8 Mo · MP4 : 30 Mo</small></div><label className="button blue small upload-button">{busy ? <LoaderCircle className="spin" size={16}/> : <Upload size={16}/>} Importer<input type="file" disabled={busy} accept="image/jpeg,image/png,image/webp,video/mp4" onChange={event => { void upload(event.target.files?.[0]); event.target.value = ""; }}/></label></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="media-grid">{data.media.map(media => <article className="media-item" key={media.id}><div className="media-preview">{media.kind === "video" ? <video src={media.url} controls preload="metadata"/> : <Image src={media.url} alt={media.title} fill sizes="(max-width: 800px) 50vw, 25vw"/>}</div><div className="media-info"><div><h3>{media.title}</h3><button className="icon-button" title="Modifier le media" aria-label={`Modifier ${media.title}`} onClick={() => setEditing({ ...media })}><Pencil size={14}/></button></div><small>{media.kind === "video" ? "VIDEO" : "PHOTO"} · {media.gallery ? "Dans la galerie" : "Mediatheque"} · Ordre {media.position}</small></div></article>)}</div>{!data.media.length && <p className="empty-state"><ImagePlus/> Aucun media importe.</p>}{editing && <Modal title="Modifier le media" onClose={() => setEditing(null)}><FieldsForm initial={editing} fields={[{ name: "title", label: "Titre / texte alternatif", full: true, required: true }, { name: "position", label: "Ordre dans la galerie", type: "number", min: 0 }, { name: "gallery", label: "Afficher dans la galerie", type: "checkbox", full: true }]} onSave={async values => { await mutate("media", values); setEditing(null); }}/></Modal>}</>;
+  return <><div className="section-toolbar media-toolbar"><div><h2>Photos & videos</h2><small>JPEG, PNG, WebP : 8 Mo · MP4 : 30 Mo</small></div><button type="button" className="button blue upload-button" disabled={busy} aria-busy={busy} onClick={() => fileInput.current?.click()}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}<span>{busy ? "Import en cours" : "Importer un fichier"}</span></button><input ref={fileInput} type="file" hidden disabled={busy} accept="image/jpeg,image/png,image/webp,video/mp4" onChange={event => { void upload(event.target.files?.[0]); event.target.value = ""; }}/></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="media-grid">{data.media.map((media, index) => <article className="media-item" key={media.id}><div className="media-preview">{media.kind === "video" ? <video src={media.url} controls preload="metadata"/> : <Image src={media.url} alt={media.title} fill loading={index < 3 ? "eager" : "lazy"} sizes="(max-width: 380px) 90vw, (max-width: 850px) 44vw, 25vw"/>}</div><div className="media-info"><div><h3>{media.title}</h3><button className="icon-button" title="Modifier le media" aria-label={`Modifier ${media.title}`} onClick={() => setEditing({ ...media })}><Pencil size={14}/></button></div><small>{media.kind === "video" ? "VIDEO" : "PHOTO"} · {media.gallery ? "Dans la galerie" : "Mediatheque"} · Ordre {media.position}</small></div></article>)}</div>{!data.media.length && <p className="empty-state"><ImagePlus/> Aucun media importe.</p>}{editing && <Modal title="Modifier le media" onClose={() => setEditing(null)}><FieldsForm initial={editing} fields={[{ name: "title", label: "Titre / texte alternatif", full: true, required: true }, { name: "position", label: "Ordre dans la galerie", type: "number", min: 0 }, { name: "gallery", label: "Afficher dans la galerie", type: "checkbox", full: true }]} onSave={async values => { await mutate("media", values); setEditing(null); }}/></Modal>}</>;
 }
 export function SettingsView({ data, mutate }: Props) {
   const settings = data.settings;
@@ -85,6 +86,10 @@ export function ContentView({ data, mutate }: Props) {
   const [publishError, setPublishError] = useState("");
   const [publishing, setPublishing] = useState(false);
   const fields: Field[] = [
+    { name: "brandName", label: "Identite : nom du restaurant", required: true, full: true },
+    { name: "brandTagline", label: "Identite : signature du logo", full: true },
+    { name: "logoImage", label: "Logo principal", type: "select", options: mediaOptions(data) },
+    { name: "logoLightImage", label: "Logo clair (fonds bleus, facultatif)", type: "select", options: mediaOptions(data) },
     { name: "tagline", label: "Accueil : surtitre", full: true }, { name: "heroTitle", label: "Accueil : nom principal", full: true, required: true },
     { name: "heroSubtitle", label: "Accueil : sous-titre", full: true },
     { name: "heroImage", label: "Photo principale", type: "select", options: mediaOptions(data), required: true },

@@ -55,13 +55,15 @@ async function main() {
     await page.getByRole("link", { name: "Confidentialite & conditions" }).click();
     await expect(page).toHaveURL(`${origin}/informations`);
     await top();
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+    const informationScroll = await page.evaluate(() => scrollY);
     await page.goBack();
     await expect(page).toHaveURL(`${origin}/reserver`);
     await sectionVisible("contact");
     await page.goForward();
     await expect(page).toHaveURL(`${origin}/informations`);
     await expect(page.locator("h1")).toBeInViewport();
-    await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(10);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(informationScroll);
     await page.getByRole("link", { name: "GALI BLUE accueil" }).click();
     await expect(page).toHaveURL(`${origin}/`);
     await top();

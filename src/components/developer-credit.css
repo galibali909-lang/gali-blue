@@ -1,0 +1,5 @@
+.developer-credit { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #6f7683; font-family: var(--font-sans), sans-serif; font-size: 11px; line-height: 1.5; flex-wrap: wrap; }
+.developer-credit strong { font-weight: 600; color: #01258f; }
+.developer-credit svg { flex-shrink: 0; color: #01258f; }
+.footer-credit { display: flex; justify-content: center; padding-top: 24px; }
+.dash-footer { text-align: center; padding: 16px 20px 24px; margin-top: auto; }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { SiteContent } from "@/lib/content";
 import { useSiteNavigation } from "./site-navigation";
+import { BrandMark } from "./brand-mark";
 import "./entrance.css";
 
 export function Entrance({ content }: { content: SiteContent }) {
@@ -26,7 +27,7 @@ function EntranceDialog({ content, onFinish }: { content: SiteContent; onFinish:
     const element = dialog.current;
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!element) return;
-    if (preference.matches || window.location.hash) { element.close(); return; }
+    if (preference.matches || window.location.hash) { element.close(); onFinishRef.current(); return; }
     let finished = false;
     const finish = () => {
       if (finished) return;
@@ -56,7 +57,7 @@ function EntranceDialog({ content, onFinish }: { content: SiteContent; onFinish:
     <div className="entry-photograph"><Image src={content.heroImage || "/images/restaurant.jpg"} alt="" fill preload sizes="100vw"/></div>
     <div className="entry-tint"/>
     <div className="entry-top"><span>{content.tagline}</span><button onClick={enter} className="entry-skip">Passer <ArrowUpRight size={17}/></button></div>
-    <div className="entry-center"><span className="entry-welcome">Bienvenue chez</span><div className="entry-wordmark" aria-label={content.heroTitle}>{content.heroTitle.split(" ").map((word, index) => <span className="entry-word" key={`${word}-${index}`} aria-hidden="true"><span style={{ animationDelay: `${0.15 + index * 0.16}s` }}>{word}</span></span>)}</div><p>{content.heroSubtitle}</p></div>
+    <div className="entry-center"><span className="entry-welcome">Bienvenue chez</span><div className="entry-wordmark" aria-label={content.brandName}>{content.logoLightImage || content.logoImage ? <BrandMark content={content} light/> : content.brandName.split(" ").map((word, index) => <span className="entry-word" key={`${word}-${index}`} aria-hidden="true"><span style={{ animationDelay: `${0.15 + index * 0.16}s` }}>{word}</span></span>)}</div><p>{content.heroSubtitle}</p></div>
     <div className="entry-bottom"><span>LA TABLE. LE BAR. LA VIE.</span><div className="entry-line" aria-hidden="true"><span/></div><span>CASABLANCA, MAROC</span></div>
   </dialog></>;
 }

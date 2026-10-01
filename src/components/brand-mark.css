@@ -1,0 +1,21 @@
+.brand, .footer-brand { display: inline-block; max-width: 100%; white-space: normal; }
+.brand .brand-mark, .footer-brand .brand-mark, .entry-wordmark .brand-mark { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 180px; max-width: 100%; min-height: 48px; margin: 0; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: 1.1; }
+.brand .brand-mark .brand-name, .footer-brand .brand-mark .brand-name { display: block; margin: 0; font: inherit; text-align: center; overflow-wrap: anywhere; }
+.brand .brand-mark .brand-tagline, .footer-brand .brand-mark .brand-tagline { display: block; margin: 7px 0 0; font-family: var(--font-sans), sans-serif; font-size: 8px; font-weight: 500; line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
+.brand-mark.has-image { height: 52px; }
+.brand-mark.has-image img { object-fit: contain; }
+.brand-mark.light.has-image:not(.has-light-image) { background: white; border-radius: 6px; }
+.brand-mark.light.has-image:not(.has-light-image) img { padding: 6px; }
+.site-nav .brand { flex: 0 1 180px; min-width: 0; }
+.site-nav .brand .brand-mark { font-size: inherit; margin: 0; }
+.booking-aside h3.brand { display: block; margin-top: 12px; }
+.footer-brand .brand-mark { width: 240px; }
+.footer-brand .brand-mark.has-image { height: 80px; }
+.footer-brand .brand-tagline { display: none !important; }
+.entry-wordmark .brand-mark.has-image { width: min(540px, 100%); height: min(200px, 26svh); }
+@media (max-width: 560px) {
+  .site-nav .brand { flex-basis: 145px; }
+  .site-nav .brand-mark { width: 145px; }
+  .site-nav .brand-mark.has-image { height: 44px; min-height: 44px; }
+  .footer-brand .brand-mark { width: 210px; }
+}

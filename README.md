@@ -65,6 +65,8 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 - Gestion des tables, places, espaces, groupes de tables, services, fermetures globales et delai de grace.
 - Fiches personnel, roles, activation, mot de passe facultatif, planning sous forme de note et affectation par reservation.
 - Carte, evenements, mediatheque image/video, brouillons, apercu prive et publication des textes.
+- Logo partage administrable (en-tete, pied de page, introduction, reservation, connexion et dashboard), avec variante claire facultative et nom de remplacement.
+- Signature Developpe par Gripo et coeur bleu ; menu mobile du dashboard avec fermeture, Echap et gestion du focus.
 - Reglage du pourcentage de reduction exclusivement pour le paiement en ligne.
 - Sessions chiffrees, cookies HttpOnly, controle d'origine, autorisations serveur, validation Zod, limitation des tentatives.
 - Dates de Casablanca avec la meme base IANA embarquee cote navigateur et serveur.
@@ -110,11 +112,18 @@ ou remplacer ce stockage par un service objet avant mise en production.
 
 ## Verification
 
+Pour modifier le logo : importer une image JPEG, PNG ou WebP dans **Photos & videos**,
+puis choisir **Logo principal** dans **Contenus du site**. Le **Logo clair** est facultatif
+pour l'introduction photographique. Enregistrer le brouillon, consulter l'apercu et publier.
+Le logo du dashboard reste dans l'administration ; **Voir le site** ouvre la vitrine.
+Choisir **Aucun fichier** pour revenir au nom et a la signature. Aucune migration SQL requise.
+
 ```powershell
 npm.cmd run check
 npm.cmd run test:ui
 npm.cmd run test:design
 npm.cmd run test:navigation
+npm.cmd run test:responsive
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -137,6 +146,12 @@ Il releve les erreurs du navigateur sans creer de reservation ni modifier la bas
 Les liens vers une nouvelle page repartent en haut ; les ancres rejoignent leur section.
 Precedent/Suivant conservent la restauration du navigateur. L'introduction ne joue qu'au
 premier chargement direct de l'accueil sans ancre, jamais pendant la navigation interne.
+
+`test:responsive` parcourt les cinq pages publiques et les dix vues du dashboard en
+320, 390, 768, 844 (paysage), 1024 et 1440 pixels. Il verifie les formulaires, le logo,
+l'import au clavier, le brouillon, la publication et la validation serveur. Il refuse
+les bases distantes et la production, puis restaure les contenus et supprime ses fichiers
+et comptes temporaires. Les tableaux larges defilent dans leur propre conteneur.
 
 L'override deepmerge-ts >=8 corrige une alerte transitive de Prisma CLI. Le schema,
 les tests et le build doivent etre revalides lors d'une mise a jour de Prisma.

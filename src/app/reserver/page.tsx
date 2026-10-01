@@ -5,5 +5,5 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Reserver une table" };
 export default async function BookingPage() {
   const { content, booking } = await publicData();
-  return <><SiteNav/><main className="section inner-page"><div className="page-intro compact"><p className="eyebrow">LES BONS MOMENTS COMMENCENT ICI</p><h1>Votre table, chez Gali.</h1></div><ReservationForm settings={booking} terms={content.bookingTerms}/></main><SiteFooter content={content}/></>;
+  return <><SiteNav content={content}/><main className="section inner-page"><div className="page-intro compact"><p className="eyebrow">LES BONS MOMENTS COMMENCENT ICI</p><h1>Votre table, chez Gali.</h1></div><ReservationForm settings={booking} terms={content.bookingTerms} content={content}/></main><SiteFooter content={content}/></>;
 }

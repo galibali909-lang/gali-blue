@@ -7,8 +7,10 @@ import type { PublicData } from "@/lib/public-data";
 import { calculatePrice, dateLabel, money } from "@/lib/domain";
 import { GuestSelect } from "./guest-select";
 import { BookingDatePicker } from "./booking-date-picker";
+import type { SiteContent } from "@/lib/content";
+import { BrandMark } from "./brand-mark";
 
-export function ReservationForm({ settings, terms }: { settings: PublicData["booking"]; terms: string }) {
+export function ReservationForm({ settings, terms, content }: { settings: PublicData["booking"]; terms: string; content: SiteContent }) {
   const [step, setStep] = useState(1);
   const [date, setDate] = useState(settings.tomorrow);
   const [guests, setGuests] = useState(2);
@@ -58,7 +60,7 @@ export function ReservationForm({ settings, terms }: { settings: PublicData["boo
     <label className="checkbox-label"><input type="checkbox" name="consent" required={step === 2}/>J&apos;accepte les conditions de reservation et le traitement de mes informations pour cette demande.</label><Link className="small-link" href="/informations" target="_blank">Consulter les conditions et la confidentialite</Link></div>
     {error && <p role="alert" className="form-error">{error}</p>}
     <div className="form-actions">{step === 2 && <button type="button" className="button outline" onClick={() => setStep(1)}><ArrowLeft size={16}/> Retour</button>}<button disabled={busy || (step === 1 && (loading || !time))} className="button blue" type="submit">{busy ? <LoaderCircle className="spin" size={17}/> : step === 1 ? "Continuer" : method === "ON_SITE" ? "Envoyer ma demande" : "Payer via CMI"}<ArrowRight size={17}/></button></div>
-  </form><aside className="booking-aside"><span className="eyebrow">VOTRE RENDEZ-VOUS</span><h3>GALI BLUE</h3><p>Restaurant & bar · Casablanca</p><dl><div><dt>Date</dt><dd>{date ? dateLabel(`${date}T12:00:00`, "dd/MM/yyyy") : "A choisir"}</dd></div><div><dt>Horaire</dt><dd>{time || "A choisir"}</dd></div><div><dt>Convives</dt><dd>{guests} personnes</dd></div><div><dt>Paiement</dt><dd>{method === "ON_SITE" ? "Au restaurant" : "En ligne"}</dd></div>{method === "ONLINE" && <><div><dt>Montant initial</dt><dd>{money(price.amount)}</dd></div><div><dt>Reduction</dt><dd>{money(price.discountAmount)}</dd></div><div><dt>Total</dt><dd>{money(price.total)}</dd></div></>}</dl>
+  </form><aside className="booking-aside"><span className="eyebrow">VOTRE RENDEZ-VOUS</span><h3 className="brand"><BrandMark content={content}/></h3><p>Restaurant & bar · Casablanca</p><dl><div><dt>Date</dt><dd>{date ? dateLabel(`${date}T12:00:00`, "dd/MM/yyyy") : "A choisir"}</dd></div><div><dt>Horaire</dt><dd>{time || "A choisir"}</dd></div><div><dt>Convives</dt><dd>{guests} personnes</dd></div><div><dt>Paiement</dt><dd>{method === "ON_SITE" ? "Au restaurant" : "En ligne"}</dd></div>{method === "ONLINE" && <><div><dt>Montant initial</dt><dd>{money(price.amount)}</dd></div><div><dt>Reduction</dt><dd>{money(price.discountAmount)}</dd></div><div><dt>Total</dt><dd>{money(price.total)}</dd></div></>}</dl>
     <div className="booking-assurance"><Phone size={19}/><p>{method === "ON_SITE" ? "Un appel pour confirmer votre venue, une table pour profiter." : "Votre table sera reservee apres paiement. Notre equipe vous appellera ensuite."}</p></div><div className="booking-assurance"><ShieldCheck size={19}/><p>{method === "ON_SITE" ? "Aucun paiement en ligne. Vous reglez directement au restaurant." : "Paiement securise sur la page du prestataire."}</p></div><details><summary>Conditions de reservation</summary><p>{terms}</p></details>
   </aside></div>;
 }

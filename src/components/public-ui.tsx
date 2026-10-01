@@ -9,14 +9,16 @@ import { ArrowDown, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Menu, 
 import type { SiteContent } from "@/lib/content";
 import type { PublicData } from "@/lib/public-data";
 import { money } from "@/lib/domain";
+import { BrandMark } from "./brand-mark";
+import { DeveloperCredit } from "./developer-credit";
 
 export function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const reduced = useReducedMotion();
-  return <motion.div className={className} initial={reduced ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px 0px -30px 0px" }} transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}>{children}</motion.div>;
+  return <motion.div className={`reveal-container ${className}`} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px 0px -30px 0px" }} transition={{ duration: reduced ? 0 : 0.5, delay: reduced ? 0 : delay, ease: [0.22, 1, 0.36, 1] }}>{children}</motion.div>;
 }
-export function SiteNav() {
+export function SiteNav({ content }: { content: SiteContent }) {
   const [open, setOpen] = useState(false);
-  return <header className="site-nav"><NavigationArrival/><Link href="/" className="brand" aria-label="GALI BLUE accueil" onClick={() => setOpen(false)}>GALI BLUE<span>CASABLANCA</span></Link>
+  return <header className="site-nav"><NavigationArrival/><Link href="/" className="brand" aria-label={`${content.brandName} accueil`} onClick={() => setOpen(false)}><BrandMark content={content}/></Link>
     <nav aria-label="Navigation principale" className={open ? "nav-links open" : "nav-links"}>
       <DropdownMenu.Root><DropdownMenu.Trigger className="house-trigger">La maison <ChevronDown size={14}/></DropdownMenu.Trigger><DropdownMenu.Portal><DropdownMenu.Content className="house-dropdown" sideOffset={24} align="start" collisionPadding={16}><DropdownMenu.Label className="house-menu-label">L&apos;UNIVERS GALI BLUE</DropdownMenu.Label>
         {[{ href: "/#esprit", title: "L'esprit Gali", detail: "Une adresse, une personnalité.", number: "01" }, { href: "/#instants", title: "Les instants", detail: "La maison en images.", number: "02" }, { href: "/#contact", title: "Nous trouver", detail: "Rendez-vous à Casablanca.", number: "03" }].map(item => <DropdownMenu.Item asChild key={item.href}><Link href={item.href} onClick={() => setOpen(false)} className="house-menu-item"><span className="house-menu-number">{item.number}</span><span><strong>{item.title}</strong><small>{item.detail}</small></span><ArrowUpRight size={18}/></Link></DropdownMenu.Item>)}
@@ -76,9 +78,9 @@ export function Gallery({ items, coverImage }: { items: PublicData["gallery"]; c
   </dialog></>;
 }
 export function SiteFooter({ content }: { content: SiteContent }) {
-  return <footer id="contact" className="site-footer"><div className="footer-top"><div><Link className="footer-brand" href="/">GALI BLUE</Link><p>Restaurant & bar · Casablanca</p></div><div><h3>Venez comme vous etes.</h3><p>{content.address}</p><p>{content.hours}</p></div><div className="footer-links">
+  return <footer id="contact" className="site-footer"><div className="footer-top"><div><Link className="footer-brand" href="/" aria-label={content.brandName}><BrandMark content={content}/></Link><p>Restaurant & bar · Casablanca</p></div><div><h3>Venez comme vous etes.</h3><p>{content.address}</p><p>{content.hours}</p></div><div className="footer-links">
     {content.phone && <a href={`tel:${content.phone.replace(/\s/g, "")}`}>{content.phone}</a>}{content.email && <a href={`mailto:${content.email}`}>{content.email}</a>}
     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`GALI BLUE ${content.address}`)}`} target="_blank" rel="noreferrer"><MapPin size={16}/> Itineraire <ArrowUpRight size={15}/></a>
     {content.instagram && <a href={content.instagram} target="_blank" rel="noreferrer"><Camera size={16}/> Instagram</a>}
-  </div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} GALI BLUE</span><div><Link href="/informations">Confidentialite & conditions</Link></div></div></footer>;
+  </div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} {content.brandName}</span><div><Link href="/informations">Confidentialite & conditions</Link></div></div><div className="footer-credit"><DeveloperCredit/></div></footer>;
 }

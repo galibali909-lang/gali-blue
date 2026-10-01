@@ -1,4 +1,5 @@
 export type SiteContent = {
+  brandName: string; brandTagline: string; logoImage: string; logoLightImage: string;
   tagline: string; heroTitle: string; heroSubtitle: string; heroImage: string; heroVideo: string;
   storyEyebrow: string; storyTitle: string; storyText: string; storyImage: string;
   menuTitle: string; menuText: string; eventTitle: string;
@@ -6,6 +7,7 @@ export type SiteContent = {
   legal: string; privacy: string; bookingTerms: string; galleryTitle: string;
 };
 export const defaultContent: SiteContent = {
+  brandName: "GALI BLUE", brandTagline: "CASABLANCA", logoImage: "", logoLightImage: "",
   tagline: "RESTAURANT · BAR · CASABLANCA",
   heroTitle: "GALI BLUE",
   heroSubtitle: "Les belles heures de Casablanca.",

@@ -107,6 +107,12 @@
 .page-intro h1 { font-size: 78px; line-height: 1.2; font-weight: 400; }
 .page-intro.compact h1 { font-size: 59px; }
 .reservation-form h2 { font-size: 31px; line-height: 1.3; }
+.reservation-layout > * { min-width: 0; }
+.reservation-form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.payment-option > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 760px) { .reservation-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 450px) { .reservation-form .form-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 850px) { .reservation-form input, .reservation-form textarea, .reservation-form select { font-size: 16px; } }
 .reservation-form input:not([type=radio]):not([type=checkbox]), .reservation-form textarea { border-radius: 8px; min-height: 52px; border-color: #d9dfe9; padding: 13px 15px; background: #fafbfd; transition: border-color .25s, background .25s, box-shadow .25s; }
 .reservation-form input:focus, .reservation-form textarea:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 3px #01258f08; }
 .guest-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 550; min-width: 0; }
@@ -136,4 +142,4 @@
 @media (max-width: 450px) { .site-nav { gap: 8px; } .site-nav .brand { font-size: 23px; } .hero h1 { font-size: 62px; gap: 0 12px; } .hero-prelude { font-size: 23px; } .hero-content { padding: 85px 5% 110px; } .hero-actions { gap: 17px; } .hero-bottom { font-size: 7px; } .hero-bottom strong { font-size: 8px; } .scroll-link { width: 42px; height: 42px; } .welcome-strip { gap: 10px; font-size: 16px; } .story-copy h2 { font-size: 35px; } .section-heading h2 { font-size: 35px; } .dish-preview { grid-template-columns: 1fr; } .dish-preview > div:nth-child(2), .dish-preview > div:nth-child(3) { padding-top: 0; } .dish-image { aspect-ratio: 1.08; } .dish-heading { display: flex; } .dish h3 { font-size: 23px; } .dish-heading > span { margin-top: 0; } .reservation-band h2 { font-size: 38px; } .page-intro.compact h1 { font-size: 37px; } .entry-wordmark { font-size: 62px; } .entry-bottom { font-size: 8px; } .reservation-form h2 { font-size: 28px; } .form-actions .button { gap: 13px; } }
 @media (max-width: 360px) { .hero h1, .entry-wordmark { font-size: 53px; } .site-nav .brand { font-size: 21px; } .site-nav .nav-reserve { padding-left: 8px; font-size: 9px; } .welcome-strip { font-size: 15px; gap: 8px; } .hero-actions .button { font-size: 11px; } }
 @media (max-height: 500px) and (min-width: 650px) { .site-nav { height: 64px; } .hero { min-height: 270px; height: calc(100svh - 100px); } .hero h1 { font-size: 54px; } .hero-content { padding: 15px 5% 55px; } .hero-topline { display: none; } .hero-prelude { font-size: 16px; margin-bottom: 0; } .hero-actions { margin-top: 12px; flex-direction: row; } .hero-subtitle { margin-top: 5px; } .hero-bottom { bottom: 10px; } .scroll-link { width: 32px; height: 32px; } .entry-wordmark { font-size: 65px; } }
-@media (prefers-reduced-motion: reduce) { .scroll-link svg { animation: none; } .house-dropdown, .guest-dropdown { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .scroll-link svg { animation: none; } .house-dropdown, .guest-dropdown { animation: none; } .reveal-container { opacity: 1 !important; transform: none !important; } }

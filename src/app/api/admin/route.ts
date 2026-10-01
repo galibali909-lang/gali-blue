@@ -76,7 +76,13 @@ export async function POST(request: Request) {
         const fields = z.record(z.string(), z.string().max(6000)).parse(raw.data.content);
         const content = { ...defaultContent };
         for (const key of Object.keys(defaultContent) as (keyof typeof defaultContent)[]) if (fields[key] !== undefined) content[key] = fields[key];
-        for (const key of ["heroImage", "heroVideo", "storyImage"] as const) localMedia.parse(content[key]);
+        for (const key of ["heroImage", "heroVideo", "storyImage", "logoImage", "logoLightImage"] as const) localMedia.parse(content[key]);
+        content.brandName = z.string().trim().min(1).max(80).parse(content.brandName);
+        content.brandTagline = z.string().trim().max(120).parse(content.brandTagline);
+        for (const image of [content.logoImage, content.logoLightImage]) {
+          if (image && !/\.(png|jpe?g|webp)$/i.test(image)) throw new HttpError("Le logo doit etre une image JPEG, PNG ou WebP.");
+          if (image.startsWith("/api/media/") && !await transaction.media.findFirst({ where: { url: image, kind: "image" } })) throw new HttpError("Logo introuvable dans la mediatheque.");
+        }
         if (content.instagram && !/^https:\/\/(www\.)?instagram\.com\//.test(content.instagram)) throw new HttpError("Lien Instagram invalide.");
         if (content.email && !z.email().safeParse(content.email).success) throw new HttpError("Email de contact invalide.");
         if (content.phone && !/^\+?[0-9 ()-]{9,22}$/.test(content.phone)) throw new HttpError("Telephone invalide.");
