@@ -55,6 +55,7 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 
 - Entree photographique visible dans le HTML initial avant l'hydratation, image prechargee puis apparition du nom et sortie en rideau apres environ 2,8 secondes. Passer ou Echap donnent un acces immediat ; aucune entree bloquante sans JavaScript ou en mode mouvements reduits.
 - Typographie Bodoni Moda / DM Sans, boutons arrondis, survols discrets, parallaxe legere et compositions editoriales adaptees au mobile.
+- Scene photographique L'heure bleue : trois ambiances du bar, rideau bleu, mouvement lent, onglets au clavier et pause. Arret hors ecran, au survol/focus et en arriere-plan ; pas de lecture automatique en mouvements reduits. Photos issues de la carte Au bar et des contenus du site.
 - Menu La maison et selecteur de convives Radix UI accessibles au clavier. Aucun lien personnel sur la vitrine ; connexion obligatoire pour le dashboard.
 - Calendrier de reservation francais React DayPicker dans un panneau Radix, avec dates passees et dates au-dela de la limite desactivees.
 - Carte filtree par categorie, galerie plein ecran, evenements publies et informations legales.
@@ -124,6 +125,7 @@ npm.cmd run test:ui
 npm.cmd run test:design
 npm.cmd run test:navigation
 npm.cmd run test:responsive
+npm.cmd run test:experience
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -141,11 +143,17 @@ le mode mouvements reduits, cinq formats d'ecran et l'absence de liens personnel
 Il ne modifie pas la base. Captures de l'entree et du nouveau design dans storage/checks.
 
 `test:navigation` cible les liens publics sur ordinateur/mobile : carte en haut,
-ancres, logos, historique, galerie, filtres et absence de repetition de l'entree.
+ancres, logos, historique, galerie, filtres et repetition de l'entree uniquement au clic-logo.
 Il releve les erreurs du navigateur sans creer de reservation ni modifier la base.
 Les liens vers une nouvelle page repartent en haut ; les ancres rejoignent leur section.
-Precedent/Suivant conservent la restauration du navigateur. L'introduction ne joue qu'au
-premier chargement direct de l'accueil sans ancre, jamais pendant la navigation interne.
+Precedent/Suivant conservent la restauration du navigateur. L'introduction joue au premier
+chargement direct de l'accueil sans ancre et lors d'un clic sur un logo public. Les autres
+liens et les ancres ne la rejouent pas. Le logo du dashboard reste dans le dashboard.
+Le mode mouvements reduits conserve un acces immediat, meme au clic-logo.
+
+`test:experience` verifie le logo de connexion, les trois ambiances du bar en cinq formats,
+la lecture automatique, la pause, le clavier, le chargement des images, l'absence de
+chevauchement et le mode mouvements reduits. Il ne modifie pas la base.
 
 `test:responsive` parcourt les cinq pages publiques et les dix vues du dashboard en
 320, 390, 768, 844 (paysage), 1024 et 1440 pixels. Il verifie les formulaires, le logo,

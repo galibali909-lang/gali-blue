@@ -1,7 +1,7 @@
 .entry-dialog { position: fixed; inset: 0; width: 100%; height: 100svh; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; overflow: hidden; background: #01258f; color: white; z-index: 100; }
 .entry-dialog[open] { display: grid; grid-template-rows: auto 1fr auto; animation: entry-curtain 2.8s cubic-bezier(.65,0,.35,1) both; }
 .entry-dialog:not([data-ready]), .entry-dialog:not([data-ready]) * { animation-play-state: paused !important; }
-html:has(:target) .entry-dialog { display: none !important; }
+html:has(:target) .entry-dialog:not([data-ready]) { display: none !important; }
 @media (prefers-reduced-motion: no-preference) { body:has(.entry-dialog[open]) { overflow: hidden; } }
 .entry-dialog::backdrop { background: transparent; backdrop-filter: none; }
 .entry-photograph, .entry-tint { position: absolute; inset: 0; pointer-events: none; }

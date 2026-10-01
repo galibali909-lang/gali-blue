@@ -44,6 +44,9 @@
 .hero-bottom { bottom: 27px; font-size: 8px; align-items: flex-end; }
 .hero-bottom strong { font-size: 10px; font-weight: 400; line-height: 2.2; }
 .hero-bottom > span:last-child { text-align: right; }
+.hero-bar-link { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-bottom: 1px solid #ffffff70; }
+.hero-bar-link > strong { font-size: 11px; font-weight: 500; }
+.hero-bar-link > svg { flex-shrink: 0; }
 .scroll-link { width: 48px; height: 48px; transition: background .25s; }
 .scroll-link:hover { background: #fff2; }
 .scroll-link svg { transition: transform .25s; }

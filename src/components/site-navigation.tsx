@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 
 type Navigation = {
   entranceAllowed: boolean;
+  entranceVersion: number;
   dismissEntrance: () => void;
-  navigate: (destination: URL) => void;
+  navigate: (destination: URL, replayEntrance?: boolean) => void;
   arrive: () => void;
 };
 
@@ -15,27 +16,29 @@ const NavigationContext = createContext<Navigation | null>(null);
 
 export function SiteNavigationProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [initialPath] = useState(pathname);
-  const [dismissed, setDismissed] = useState(false);
-  const pending = useRef<URL | null>(null);
+  const [entrance, setEntrance] = useState({ allowed: pathname === "/", version: 0 });
+  const pending = useRef<{ destination: URL; replayEntrance: boolean } | null>(null);
   const frame = useRef<number | null>(null);
 
   function arrive() {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
     frame.current = requestAnimationFrame(() => {
-      const destination = pending.current;
-      if (!destination || destination.pathname !== location.pathname || destination.search !== location.search) return;
+      const request = pending.current;
+      if (!request) return;
+      const { destination, replayEntrance } = request;
+      if (destination.pathname !== location.pathname || destination.search !== location.search || destination.hash !== location.hash) return;
       const target = destination.hash ? document.getElementById(decodeURIComponent(destination.hash.slice(1))) : null;
       if (destination.hash && !target) return;
       pending.current = null;
       if (target) target.scrollIntoView({ behavior: "instant", block: "start" });
       else window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (replayEntrance) setEntrance(previous => ({ allowed: true, version: previous.version + 1 }));
     });
   }
 
-  function navigate(destination: URL) {
-    setDismissed(true);
-    pending.current = destination;
+  function navigate(destination: URL, replayEntrance = false) {
+    setEntrance(previous => ({ ...previous, allowed: false }));
+    pending.current = { destination, replayEntrance: replayEntrance && destination.pathname === "/" && !destination.hash };
     arrive();
   }
 
@@ -48,7 +51,7 @@ export function SiteNavigationProvider({ children }: { children: React.ReactNode
     return () => { cancelPending(); window.removeEventListener("popstate", cancelPending); };
   }, []);
 
-  return <NavigationContext.Provider value={{ entranceAllowed: initialPath === "/" && !dismissed, dismissEntrance: () => setDismissed(true), navigate, arrive }}>{children}</NavigationContext.Provider>;
+  return <NavigationContext.Provider value={{ entranceAllowed: entrance.allowed, entranceVersion: entrance.version, dismissEntrance: () => setEntrance(previous => ({ ...previous, allowed: false })), navigate, arrive }}>{children}</NavigationContext.Provider>;
 }
 
 export function useSiteNavigation() {
@@ -63,13 +66,13 @@ export function NavigationArrival() {
   return null;
 }
 
-export function SiteLink({ href, onNavigate, ...props }: Omit<React.ComponentProps<typeof NextLink>, "href" | "scroll"> & { href: string }) {
+export function SiteLink({ href, onNavigate, replayEntrance = false, ...props }: Omit<React.ComponentProps<typeof NextLink>, "href" | "scroll"> & { href: string; replayEntrance?: boolean }) {
   const navigation = useSiteNavigation();
   return <NextLink {...props} href={href} scroll={false} onNavigate={event => {
     onNavigate?.(event);
     const destination = new URL(href, window.location.href);
     if (destination.origin !== window.location.origin) return;
-    navigation.navigate(destination);
+    navigation.navigate(destination, replayEntrance);
     if (destination.href === window.location.href) event.preventDefault();
   }}/>;
 }

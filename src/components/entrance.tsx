@@ -9,8 +9,8 @@ import { BrandMark } from "./brand-mark";
 import "./entrance.css";
 
 export function Entrance({ content }: { content: SiteContent }) {
-  const { entranceAllowed, dismissEntrance } = useSiteNavigation();
-  return entranceAllowed ? <EntranceDialog content={content} onFinish={dismissEntrance}/> : null;
+  const { entranceAllowed, entranceVersion, dismissEntrance } = useSiteNavigation();
+  return entranceAllowed ? <EntranceDialog key={entranceVersion} content={content} onFinish={dismissEntrance}/> : null;
 }
 
 function EntranceDialog({ content, onFinish }: { content: SiteContent; onFinish: () => void }) {

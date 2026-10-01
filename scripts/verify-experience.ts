@@ -1,0 +1,81 @@
+import { chromium, expect } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+async function main() {
+  const origin = process.env.APP_ORIGIN || "http://localhost:3000";
+  const browser = await chromium.launch({ channel: "msedge", headless: true });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  const artifacts = fileURLToPath(new URL("../storage/checks", import.meta.url));
+  await mkdir(artifacts, { recursive: true });
+  try {
+    await page.goto(`${origin}/connexion`, { waitUntil: "networkidle" });
+    await page.locator(".login-page .brand").click();
+    await expect(page.locator(".entry-dialog[data-ready='true']")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".entry-dialog[open]")).toHaveCount(0);
+    await page.getByRole("link", { name: "L'heure bleue", exact: true }).click();
+    await expect(page).toHaveURL(`${origin}/#bar`);
+    await expect(page.locator(".entry-dialog[open]")).toHaveCount(0);
+    const bar = page.locator(".bar-scene");
+    await bar.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    await expect(bar).toHaveAttribute("data-playing", "true");
+    await expect(page.locator("#bar-tab-table")).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
+    await page.getByRole("button", { name: "Mettre les ambiances en pause" }).click();
+    await page.mouse.move(0, 0);
+    await page.locator(".bar-play").blur();
+    await expect(bar).toHaveAttribute("data-playing", "false");
+    await page.locator("#bar-tab-table").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator("#bar-tab-soiree")).toBeFocused();
+    await expect(page.locator("#bar-tab-soiree")).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Home");
+    await expect(page.locator("#bar-tab-aperitif")).toBeFocused();
+    for (const viewport of [{ width: 1440, height: 1000 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 740 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(viewport);
+      for (const id of ["aperitif", "table", "soiree"]) {
+        await page.locator(`#bar-tab-${id}`).click();
+        await expect(page.locator(".bar-moment-copy")).toHaveCSS("opacity", "1");
+        await expect(page.locator(".bar-photograph")).toHaveCSS("opacity", "1");
+        await expect(page.locator(".bar-photograph img")).toHaveJSProperty("complete", true);
+        expect(await page.locator(".bar-photograph img").evaluate(element => (element as HTMLImageElement).naturalWidth > 0)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        const layout = await bar.evaluate(element => {
+          const title = element.querySelector(".bar-heading")!.getBoundingClientRect();
+          const copy = element.querySelector(".bar-moment")!.getBoundingClientRect();
+          const controls = element.querySelector(".bar-controls")!.getBoundingClientRect();
+          const viewportWidth = document.documentElement.clientWidth;
+          return { separate: title.right <= copy.left || title.bottom <= copy.top, controlsBelow: Math.max(title.bottom, copy.bottom) <= controls.top + 1, fits: [...element.querySelectorAll("h2, h3, p, button, a")].every(child => child.scrollWidth <= child.clientWidth + 1 && child.getBoundingClientRect().right <= viewportWidth + 1) };
+        });
+        expect(layout, `Bar ${id} ${viewport.width}`).toEqual({ separate: true, controlsBelow: true, fits: true });
+        if (id === "aperitif" && [320, 390, 1440].includes(viewport.width)) await bar.screenshot({ path: path.join(artifacts, `bar-scene-${viewport.width}.png`) });
+      }
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByRole("button", { name: "Relancer les ambiances" }).click();
+    await page.locator(".bar-play").blur();
+    await page.mouse.move(0, 0);
+    await page.locator(".site-nav").scrollIntoViewIfNeeded();
+    await expect(bar).toHaveAttribute("data-playing", "false");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload({ waitUntil: "networkidle" });
+    await bar.scrollIntoViewIfNeeded();
+    await expect(bar).toHaveAttribute("data-playing", "false");
+    await expect(page.locator(".bar-photograph img")).toHaveCSS("animation-name", "none");
+    await page.locator("#bar-tab-table").click();
+    await expect(page.locator(".bar-moment h3")).toHaveText("Les conversations.");
+    await page.locator(".site-nav .brand").click();
+    await expect(page).toHaveURL(`${origin}/`);
+    await expect(page.locator(".entry-dialog[open]")).toHaveCount(0);
+    expect(errors).toEqual([]);
+    console.log("PASS: logo connexion, lien bar sans intro, lecture automatique, pause/clavier, 3 ambiances x 5 formats, images chargees, aucun chevauchement, arret hors ecran et mouvements reduits.");
+  } finally { await context.close(); await browser.close(); }
+}
+
+main().catch(error => { console.error(error); process.exitCode = 1; });

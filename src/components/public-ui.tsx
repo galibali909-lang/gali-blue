@@ -5,7 +5,7 @@ import { NavigationArrival, SiteLink as Link } from "./site-navigation";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ArrowDown, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Menu, Pause, Play, X, MapPin, Camera } from "lucide-react";
+import { ArrowDown, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Menu, Pause, Play, X, MapPin, Camera, Martini } from "lucide-react";
 import type { SiteContent } from "@/lib/content";
 import type { PublicData } from "@/lib/public-data";
 import { money } from "@/lib/domain";
@@ -18,7 +18,7 @@ export function Reveal({ children, className = "", delay = 0 }: { children: Reac
 }
 export function SiteNav({ content }: { content: SiteContent }) {
   const [open, setOpen] = useState(false);
-  return <header className="site-nav"><NavigationArrival/><Link href="/" className="brand" aria-label={`${content.brandName} accueil`} onClick={() => setOpen(false)}><BrandMark content={content}/></Link>
+  return <header className="site-nav"><NavigationArrival/><Link href="/" replayEntrance className="brand" aria-label={`${content.brandName} accueil`} onClick={() => setOpen(false)}><BrandMark content={content}/></Link>
     <nav aria-label="Navigation principale" className={open ? "nav-links open" : "nav-links"}>
       <DropdownMenu.Root><DropdownMenu.Trigger className="house-trigger">La maison <ChevronDown size={14}/></DropdownMenu.Trigger><DropdownMenu.Portal><DropdownMenu.Content className="house-dropdown" sideOffset={24} align="start" collisionPadding={16}><DropdownMenu.Label className="house-menu-label">L&apos;UNIVERS GALI BLUE</DropdownMenu.Label>
         {[{ href: "/#esprit", title: "L'esprit Gali", detail: "Une adresse, une personnalité.", number: "01" }, { href: "/#instants", title: "Les instants", detail: "La maison en images.", number: "02" }, { href: "/#contact", title: "Nous trouver", detail: "Rendez-vous à Casablanca.", number: "03" }].map(item => <DropdownMenu.Item asChild key={item.href}><Link href={item.href} onClick={() => setOpen(false)} className="house-menu-item"><span className="house-menu-number">{item.number}</span><span><strong>{item.title}</strong><small>{item.detail}</small></span><ArrowUpRight size={18}/></Link></DropdownMenu.Item>)}
@@ -47,7 +47,7 @@ export function Hero({ content }: { content: SiteContent }) {
     <div className="hero-content"><Reveal><p className="hero-prelude">La vie, en bleu.</p><h1 aria-label={content.heroTitle}>{content.heroTitle.split(" ").map((word, index) => <span key={`${word}-${index}`} className={index % 2 ? "hero-word accent-word" : "hero-word"}>{word}{" "}</span>)}</h1><p className="hero-subtitle">{content.heroSubtitle}</p>
       <div className="hero-actions"><Link className="button white" href="/reserver">Votre table vous attend <ArrowUpRight size={18}/></Link><Link className="hero-menu-link" href="/la-carte">Explorer la carte <ArrowUpRight size={17}/></Link></div>
     </Reveal></div>
-    <div className="hero-bottom"><span>CUISINE DE CARACTÈRE<br/><strong>ESPRIT LIBRE.</strong></span><Link href="#esprit" className="scroll-link" aria-label="Decouvrir le restaurant"><ArrowDown size={20}/></Link><span>CASABLANCA<br/><strong>MAROC</strong></span></div>
+    <div className="hero-bottom"><span>CUISINE DE CARACTÈRE<br/><strong>ESPRIT LIBRE.</strong></span><Link href="#esprit" className="scroll-link" aria-label="Decouvrir le restaurant"><ArrowDown size={20}/></Link><Link href="#bar" className="hero-bar-link"><Martini size={19}/><strong>L&apos;heure bleue</strong><ArrowUpRight size={14}/></Link></div>
     {content.heroVideo && <button className="video-toggle icon-button" title={playing ? "Mettre en pause" : "Lire la video"} aria-label={playing ? "Mettre en pause" : "Lire la video"} onClick={() => playing ? video.current?.pause() : void video.current?.play().catch(() => {})}>{playing ? <Pause size={18}/> : <Play size={18}/>}</button>}
   </section>;
 }
@@ -78,7 +78,7 @@ export function Gallery({ items, coverImage }: { items: PublicData["gallery"]; c
   </dialog></>;
 }
 export function SiteFooter({ content }: { content: SiteContent }) {
-  return <footer id="contact" className="site-footer"><div className="footer-top"><div><Link className="footer-brand" href="/" aria-label={content.brandName}><BrandMark content={content}/></Link><p>Restaurant & bar · Casablanca</p></div><div><h3>Venez comme vous etes.</h3><p>{content.address}</p><p>{content.hours}</p></div><div className="footer-links">
+  return <footer id="contact" className="site-footer"><div className="footer-top"><div><Link className="footer-brand" href="/" replayEntrance aria-label={content.brandName}><BrandMark content={content}/></Link><p>Restaurant & bar · Casablanca</p></div><div><h3>Venez comme vous etes.</h3><p>{content.address}</p><p>{content.hours}</p></div><div className="footer-links">
     {content.phone && <a href={`tel:${content.phone.replace(/\s/g, "")}`}>{content.phone}</a>}{content.email && <a href={`mailto:${content.email}`}>{content.email}</a>}
     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`GALI BLUE ${content.address}`)}`} target="_blank" rel="noreferrer"><MapPin size={16}/> Itineraire <ArrowUpRight size={15}/></a>
     {content.instagram && <a href={content.instagram} target="_blank" rel="noreferrer"><Camera size={16}/> Instagram</a>}
