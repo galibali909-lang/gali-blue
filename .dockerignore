@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env*
+github
+github.*
+.local
+.vscode
+storage
+tests
+test-results
+playwright-report
+*.local.sql
+*.tsbuildinfo
+npm-debug.log*

@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  HOST
+  SERVICE
+  CASHIER
+  EDITOR
+}
+
+enum BookingStatus {
+  CALL_PENDING
+  PAYMENT_PENDING
+  PROVISIONAL
+  RESERVED
+  ARRIVED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  ON_SITE_DUE
+  PENDING
+  FAILED
+  PAID
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum CallStatus {
+  TO_CALL
+  NO_ANSWER
+  CONFIRMED
+  CANCEL_REQUESTED
+}
+
+enum PaymentMethod {
+  ON_SITE
+  ONLINE
+}
+
+model Settings {
+  id               Int      @id @default(1)
+  onlineEnabled    Boolean  @default(false)
+  discountEnabled  Boolean  @default(false)
+  discountPercent  Int      @default(0)
+  onlineAmount     Int      @default(0)
+  maxGuests        Int      @default(12)
+  durationMinutes  Int      @default(120)
+  cleanupMinutes   Int      @default(15)
+  holdMinutes      Int      @default(15)
+  graceMinutes     Int      @default(30)
+  serviceTimes     Json
+  closedDates      Json
+  content          Json
+  draftContent     Json?
+  updatedAt        DateTime @updatedAt
+}
+
+model DiningTable {
+  id         String        @id @default(cuid())
+  name       String        @unique
+  area       String
+  seats      Int
+  joinGroup  String?
+  active     Boolean       @default(true)
+  bookings   Reservation[]
+  updatedAt  DateTime      @updatedAt
+}
+
+model Reservation {
+  id               String        @id @default(cuid())
+  reference        String        @unique
+  requestKey       String        @unique
+  name             String
+  phone            String
+  email            String?
+  guests           Int
+  startsAt         DateTime
+  endsAt           DateTime
+  holdUntil        DateTime?
+  status           BookingStatus @default(CALL_PENDING)
+  method           PaymentMethod
+  paymentStatus    PaymentStatus @default(ON_SITE_DUE)
+  callStatus       CallStatus    @default(TO_CALL)
+  amount           Int           @default(0)
+  discountPercent  Int           @default(0)
+  discountAmount   Int           @default(0)
+  paidAmount       Int           @default(0)
+  note             String?       @db.Text
+  assignedStaffId  String?
+  assignedStaff    Staff?        @relation(fields: [assignedStaffId], references: [id])
+  tables           DiningTable[]
+  payments         Payment[]
+  audits           Audit[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([startsAt, endsAt, status])
+  @@index([status, holdUntil])
+}
+
+model Payment {
+  id             String      @id @default(cuid())
+  reservationId  String
+  reservation    Reservation @relation(fields: [reservationId], references: [id])
+  providerRef    String      @unique
+  amount         Int
+  status         String
+  createdAt      DateTime    @default(now())
+}
+
+model Staff {
+  id            String        @id @default(cuid())
+  name          String
+  email         String?       @unique
+  phone         String?
+  job           String
+  role          Role          @default(SERVICE)
+  passwordHash  String?
+  image         String?
+  shift         String?
+  active        Boolean       @default(true)
+  sessionVersion Int          @default(1)
+  bookings      Reservation[]
+  createdAt     DateTime      @default(now())
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  name        String
+  description String  @db.Text
+  category    String
+  price       Int
+  image       String?
+  allergens   String?
+  available   Boolean @default(true)
+  position    Int     @default(0)
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  date        DateTime
+  image       String?
+  published   Boolean  @default(false)
+}
+
+model Media {
+  id         String   @id @default(cuid())
+  url        String
+  title      String
+  kind       String
+  gallery    Boolean  @default(false)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model Audit {
+  id             String       @id @default(cuid())
+  actor          String
+  action         String
+  detail         String       @db.Text
+  reservationId  String?
+  reservation    Reservation? @relation(fields: [reservationId], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@index([reservationId, createdAt])
+}
+
+model RateLimit {
+  key       String   @id
+  hits      Int
+  expiresAt DateTime
+}

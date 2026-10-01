@@ -1,0 +1,54 @@
+{
+  "name": "gali-blue",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --env-file=.env --test tests/*.test.ts",
+    "test:ui": "tsx --env-file=.env scripts/verify-ui.ts",
+    "test:design": "tsx --env-file=.env scripts/verify-design.ts",
+    "check": "node --env-file=.env scripts/check.mjs",
+    "db:init": "node --env-file=.env scripts/init-db.mjs",
+    "db:deploy": "prisma migrate deploy",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
+    "admin:local": "tsx --env-file=.env scripts/create-admin.ts --local-test",
+    "admin:bootstrap": "tsx --env-file-if-exists=.env scripts/create-admin.ts --bootstrap"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@radix-ui/react-dropdown-menu": "^2.1.24",
+    "@radix-ui/react-popover": "^1.1.23",
+    "@radix-ui/react-select": "^2.3.7",
+    "bcryptjs": "^3.0.3",
+    "date-fns": "^4.4.0",
+    "iron-session": "^9.0.1",
+    "lucide-react": "^1.49.0",
+    "moment-timezone": "^0.6.4",
+    "motion": "^13.5.0",
+    "mysql2": "^3.24.5",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-day-picker": "^9.14.0",
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.8",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}

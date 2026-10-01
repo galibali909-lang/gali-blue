@@ -1,0 +1,18 @@
+.booking-date-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 550; min-width: 0; }
+.booking-date-trigger { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 13px 15px; background: #fafbfd; border: 1px solid #d9dfe9; color: var(--ink); border-radius: 3px; font-size: 14px; text-align: left; }
+.booking-date-trigger > svg { color: var(--blue); }
+.booking-date-trigger > span { flex: 1; }
+.booking-date-trigger[data-state=open] { border-color: var(--blue); box-shadow: 0 0 0 3px #01258f08; }
+.booking-date-trigger > svg:last-child { transition: transform .2s; }
+.booking-date-trigger[data-state=open] > svg:last-child { transform: rotate(180deg); }
+.booking-date-popover { z-index: 70; width: max-content; max-width: calc(100vw - 32px); padding: 14px; background: white; border: 1px solid #dbe1ec; border-radius: 5px; box-shadow: 0 16px 50px #142b5320; animation: calendar-open .2s ease-out; }
+.booking-calendar { --rdp-accent-color: #01258f; --rdp-accent-background-color: #edf2ff; --rdp-day-width: 36px; --rdp-day-height: 36px; --rdp-day_button-width: 34px; --rdp-day_button-height: 34px; --rdp-day_button-border-radius: 4px; --rdp-selected-border: 1px solid #01258f; --rdp-nav_button-width: 32px; --rdp-nav_button-height: 32px; font-family: var(--font-sans), sans-serif; font-size: 12px; }
+.booking-calendar .rdp-month_caption { font-family: var(--font-editorial), serif; font-size: 21px; color: var(--blue); padding-bottom: 8px; }
+.booking-calendar .rdp-caption_label { font-weight: 400; }
+.booking-calendar .rdp-weekday { font-weight: 500; font-size: 10px; color: #78808a; }
+.booking-calendar .rdp-selected .rdp-day_button { background: var(--blue); color: white; font-weight: 600; }
+.booking-calendar .rdp-day_button:hover:not(:disabled) { background: #edf2ff; color: var(--blue); }
+.booking-calendar .rdp-day_button:focus-visible { outline-offset: 1px; }
+.booking-calendar .rdp-outside:not(.rdp-selected) { color: #9aa2af; }
+@keyframes calendar-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .booking-date-popover { animation: none; } .booking-date-trigger > svg:last-child { transition: none; } }
