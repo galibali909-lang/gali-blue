@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     session.staffId = staff.id; session.version = staff.sessionVersion;
     await session.save();
     await db.audit.create({ data: { actor: staff.name, action: "CONNEXION", detail: input.setup ? "Creation du premier administrateur." : "Connexion au dashboard." } });
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, mustChangePassword: staff.mustChangePassword });
   } catch (error) { return apiError(error); }
 }
 export async function DELETE(request: Request) {

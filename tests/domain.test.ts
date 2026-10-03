@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { allocateTables, calculatePrice, canTransition, localDateTime, dateLabel } from "../src/lib/domain";
+import { demoFloorTables } from "../src/lib/floor-layout";
 
 test("on-site payment never receives an online discount", () => {
   assert.equal(calculatePrice(30000, "ON_SITE", true, 15).total, 30000);
@@ -24,7 +25,8 @@ test("the smallest compatible single table is selected", () => {
   ], 3)?.[0].id, "small");
 });
 test("staff cannot manufacture a CMI payment or reopen a cancelled booking", () => {
-  assert.equal(canTransition("CALL_PENDING", "PROVISIONAL"), true);
+  assert.equal(canTransition("CALL_PENDING", "RESERVED"), true);
+  assert.equal(canTransition("CALL_PENDING", "PROVISIONAL"), false);
   assert.equal(canTransition("PAYMENT_PENDING", "RESERVED"), false);
   assert.equal(canTransition("CANCELLED", "RESERVED"), false);
   assert.equal(canTransition("RESERVED", "ARRIVED"), true);
@@ -33,4 +35,14 @@ test("staff cannot manufacture a CMI payment or reopen a cancelled booking", () 
 test("Casablanca local times round-trip and impossible dates are rejected", () => {
   assert.equal(dateLabel(localDateTime("2026-10-15", "19:00")), "15/10/2026 19:00");
   assert.throws(() => localDateTime("2026-02-30", "19:00"));
+});
+test("the full demo plan has 38 unique units, nine VIP and non-overlapping touch targets", () => {
+  assert.equal(demoFloorTables.length, 38);
+  assert.equal(new Set(demoFloorTables.map(table => table.name)).size, 38);
+  assert.equal(demoFloorTables.filter(table => table.vip).length, 9);
+  for (const [index, first] of demoFloorTables.entries()) {
+    for (const second of demoFloorTables.slice(index + 1)) {
+      assert.ok(Math.abs(first.planX - second.planX) * 12 >= 46 || Math.abs(first.planY - second.planY) * 8.4825 >= 44, `${first.name} overlaps ${second.name}`);
+    }
+  }
 });

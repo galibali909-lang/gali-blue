@@ -12,10 +12,22 @@
 .plan-legend .available { background: #12775b; }
 .plan-legend .unavailable { background: #a33744; }
 .plan-scroll { overflow-x: auto; border: 1px solid #dbe0e9; border-radius: 8px; background: #f6f7f9; }
-.plan-canvas { position: relative; width: 100%; min-width: 840px; aspect-ratio: 1600 / 1131; }
+.plan-canvas { position: relative; width: 100%; min-width: 1200px; aspect-ratio: 1600 / 1131; }
 .plan-canvas > img { object-fit: contain; }
-.plan-table { position: absolute; z-index: 1; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; gap: 4px; width: 60px; height: 44px; border: 2px solid white; border-radius: 8px; box-shadow: 0 2px 8px #0003; color: white; cursor: pointer; font-size: 12px; }
+.plan-table { position: absolute; z-index: 1; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; gap: 2px; width: 46px; height: 44px; border: 2px solid white; border-radius: 8px; box-shadow: 0 2px 8px #0003; color: white; cursor: pointer; font-size: 10px; }
+.plan-table svg { width: 12px; height: 12px; flex-shrink: 0; }
 .plan-table.available { background: #12775b; }
+.plan-table.vip.available { background: #01258f; }
+.plan-table-list-item.vip.available { color: #01258f; }
+.plan-vip-label { position: absolute; top: -11px; right: -4px; border: 1px solid white; background: #01258f; color: white; border-radius: 3px; padding: 1px 4px; font-size: 9px; }
+.booking-category { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.call-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; padding: 16px 0; border-bottom: 1px solid #dbe0e9; margin-bottom: 20px; }
+.booking-category-options { border: 0; padding: 0; margin: 0 0 28px; min-width: 0; }
+.booking-category-options legend { font-size: 12px; margin-bottom: 10px; }
+.booking-category-segments { display: flex; flex-wrap: wrap; gap: 4px; }
+:is(.floor-booking, .reservation-form) .booking-category-segments label { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; padding: 12px 16px; min-height: 44px; border: 1px solid #dbe0e9; border-radius: 4px; color: #546070; cursor: pointer; font-size: 13px; }
+.booking-category-segments label.selected { background: #01258f; border-color: #01258f; color: white; }
+.booking-category-segments input { width: 14px; height: 14px; padding: 0; accent-color: #01258f; }
 .plan-table strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plan-table-list-item strong, .plan-dialog h2 { overflow-wrap: anywhere; }
 .plan-table.unavailable { background: #a33744; }

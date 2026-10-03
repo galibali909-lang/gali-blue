@@ -1,11 +1,11 @@
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect, type BrowserContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { hash } from "bcryptjs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { db } from "../src/lib/db";
 import { dateLabel } from "../src/lib/domain";
-import { updateBooking } from "../src/lib/booking";
+import { demoFloorTables } from "../src/lib/floor-layout";
 
 async function main() {
   const origin = process.env.APP_ORIGIN || "http://localhost:3000";
@@ -29,10 +29,14 @@ async function main() {
   let tableId = "";
   let staffId = "";
   let reservationId = "";
+  let vipTableId = "";
+  const clients: BrowserContext[] = [];
   try {
     staffId = (await db.staff.create({ data: { name: actor, email, job: "Test temporaire", role: "ADMIN", passwordHash: await hash(password, 12) } })).id;
     const table = await db.diningTable.create({ data: { name: `PX-${marker.slice(0, 4)}`, area: "Salle test", seats: 4, planX: 65, planY: 80 } });
     tableId = table.id;
+    const vipTable = await db.diningTable.create({ data: { name: `VP-${marker.slice(0, 4)}`, area: "VIP test", seats: 8, vip: true, planX: 65, planY: 87 } });
+    vipTableId = vipTable.id;
     await db.settings.update({ where: { id: 1 }, data: { classicBookingEnabled: true, floorBookingEnabled: false, closedDates: (original.closedDates as string[]).filter(value => value !== date) } });
     await page.goto(`${origin}/connexion`, { waitUntil: "networkidle" });
     await page.getByLabel("Email professionnel").fill(email);
@@ -62,6 +66,11 @@ async function main() {
     await db.diningTable.update({ where: { id: tableId }, data: { planX: 65, planY: 80 } });
     await page.goto(`${origin}/salle`, { waitUntil: "networkidle" });
     await page.getByLabel("Service", { exact: true }).selectOption(time);
+    await expect(page.locator(".plan-table")).toHaveCount(demoFloorTables.length + 2);
+    for (const item of demoFloorTables) await expect(page.locator(".plan-table strong").filter({ hasText: new RegExp(`^${item.name}$`) })).toHaveCount(1);
+    await page.getByRole("radio", { name: "VIP", exact: true }).check();
+    await expect(page.locator(".plan-table")).toHaveCount(10);
+    await page.getByRole("radio", { name: "Toutes", exact: true }).check();
     for (const [width, height] of [[1440, 1100], [1024, 1000], [768, 1000], [390, 844], [320, 740]]) {
       await page.setViewportSize({ width, height });
       await expect(page.locator(".plan-loading")).toHaveCount(0);
@@ -91,7 +100,51 @@ async function main() {
     reservationId = reservation.id;
     expect(reservation.requestedTableId).toBe(tableId);
     expect(reservation.status).toBe("CALL_PENDING");
-    await updateBooking({ id: reservation.id, action: "transition", status: "PROVISIONAL" }, { id: staffId, name: actor, role: "ADMIN" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${origin}/dashboard?view=reservations`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: `Ouvrir la reservation de ${actor}`, exact: true }).click();
+    await page.getByRole("button", { name: "Sans reponse, rappeler", exact: true }).click();
+    await expect(page.locator(".detail-title .badge")).toHaveText("A rappeler");
+    await expect(page.locator(".call-summary")).toContainText("1 tentative(s)");
+    await page.getByRole("dialog").screenshot({ path: `${artifacts}/call-mobile.png` });
+    expect(await page.getByRole("dialog").evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+    await page.getByRole("button", { name: "Confirmer par telephone", exact: true }).click();
+    await expect(page.locator(".detail-title .badge")).toHaveText("Confirmee par appel");
+    await expect(page.locator(".table-checkboxes input:checked")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    for (const [index, width] of [390, 320].entries()) {
+      const clientContext = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true });
+      clients.push(clientContext);
+      const client = await clientContext.newPage();
+      const name = `${actor} VIP ${index + 1}`;
+      if (index === 0) {
+        await client.goto(`${origin}/reserver`, { waitUntil: "networkidle" });
+        await client.getByRole("radio", { name: "VIP", exact: true }).tap();
+        await expect(client.locator(".loading-inline")).toHaveCount(0);
+        await client.getByRole("button", { name: time, exact: true }).tap();
+        await client.screenshot({ path: `${artifacts}/classic-vip-mobile.png`, fullPage: true });
+      } else {
+        await client.goto(`${origin}/salle`, { waitUntil: "networkidle" });
+        await client.getByLabel("Service", { exact: true }).selectOption(time);
+        await client.getByRole("radio", { name: "VIP", exact: true }).tap();
+        await client.locator(".plan-table-list").getByRole("button", { name: `${vipTable.name}, 8 places, Disponible, VIP`, exact: true }).tap();
+        await expect(client.getByRole("dialog")).toContainText("VIP");
+        await client.screenshot({ path: `${artifacts}/vip-popup-mobile.png` });
+        await client.getByRole("link", { name: "Reserver cette table" }).tap();
+        await expect(client.locator(".booking-category")).toContainText("VIP");
+      }
+      expect(await client.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await client.getByRole("button", { name: "Continuer", exact: true }).tap();
+      await client.getByLabel("Nom complet").fill(name);
+      await client.getByLabel("Telephone", { exact: true }).fill(phone);
+      await client.locator('input[name="consent"]').check();
+      await client.getByRole("button", { name: "Envoyer ma demande", exact: true }).tap();
+      await expect(client.locator(".booking-success")).toBeVisible();
+      const savedClient = await db.reservation.findFirstOrThrow({ where: { name } });
+      expect(savedClient.vip).toBe(true);
+      expect(savedClient.status).toBe("CALL_PENDING");
+      if (index === 1) expect(savedClient.requestedTableId).toBe(vipTableId);
+    }
     await page.goto(`${origin}/salle?occupied=1`, { waitUntil: "networkidle" });
     await page.getByLabel("Service", { exact: true }).selectOption(time);
     await page.locator(".plan-table-list").getByRole("button", { name: `${table.name}, 4 places, Pas disponible`, exact: true }).click();
@@ -107,17 +160,19 @@ async function main() {
     await page.goto(`${origin}/salle?disabled=1`, { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/reserver$/);
     expect(errors).toEqual([]);
-    console.log("PASS: dashboard activation/placement, five viewports, popup, prefilled submission, unavailable table and mode gates.");
+    await writeFile(`${artifacts}/floor-use-cases.json`, JSON.stringify({ success: true, generatedAt: new Date().toISOString(), canonicalTables: 38, vipTables: 9, viewports: [1440, 1024, 768, 390, 320], touchClients: 2, checks: ["Activation et placement", "38 tables et 9 VIP", "Popup et formulaire", "Rappel et confirmation mobile", "Deux clients VIP anonymes tactiles", "Table occupee", "Parcours desactives"] }, null, 2));
+    console.log("PASS: 38 tables / 9 VIP, five viewports, two anonymous touch clients, call follow-up/confirmation, unavailable table and mode gates.");
   } finally {
     if (reservationId) { await db.audit.deleteMany({ where: { reservationId } }); await db.reservation.delete({ where: { id: reservationId } }); }
-    const remaining = await db.reservation.findMany({ where: { name: actor }, select: { id: true } });
+    const remaining = await db.reservation.findMany({ where: { name: { startsWith: actor } }, select: { id: true } });
     await db.audit.deleteMany({ where: { reservationId: { in: remaining.map(item => item.id) } } });
-    await db.reservation.deleteMany({ where: { name: actor } });
-    if (tableId) await db.diningTable.delete({ where: { id: tableId } });
+    await db.reservation.deleteMany({ where: { name: { startsWith: actor } } });
+    await db.diningTable.deleteMany({ where: { id: { in: [tableId, vipTableId].filter(Boolean) } } });
     if (staffId) await db.staff.delete({ where: { id: staffId } });
     await db.audit.deleteMany({ where: { actor } });
     await db.rateLimit.deleteMany({ where: { key: `booking:${phone.replace(/\D/g, "")}` } });
     await db.settings.update({ where: { id: 1 }, data: { classicBookingEnabled: original.classicBookingEnabled, floorBookingEnabled: original.floorBookingEnabled, floorPlanImage: original.floorPlanImage, closedDates: original.closedDates as string[] } });
+    for (const client of clients) await client.close();
     await context.close(); await browser.close(); await db.$disconnect();
   }
 }

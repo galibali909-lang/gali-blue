@@ -59,11 +59,15 @@ au moins 32 caracteres aleatoires ; ne pas conserver la valeur d'exemple REPLACE
 ## Premier demarrage
 
 Le conteneur execute successivement les migrations Prisma existantes, le seed de
-demonstration et la creation du premier administrateur, puis lance Next.js.
+demonstration, la creation du premier administrateur puis les six acces d'equipe,
+avant de lancer Next.js.
 Les executions suivantes ne changent pas les reglages ou mots de passe existants.
 Le seed remplit uniquement les collections de demonstration vides.
-Si un compte de connexion existe deja, meme desactive, aucun compte initial n'est ajoute
-et aucun mot de passe n'est reinitialise. Une desactivation ne reactive donc pas l'acces initial.
+Si un compte de connexion existe deja, meme desactive, aucun administrateur historique
+initial n'est ajoute. Le bootstrap d'equipe ajoute seulement les profils manquants du
+manifest `deployment/bootstrap-team.json` (six hashes, sans mots de passe en clair).
+Chaque profil existant est conserve par identifiant ou email, sans reinitialisation
+ni reactivation. Les mots de passe initiaux sont remis dans un fichier prive separe.
 
 Sans ADMIN_EMAIL ni ADMIN_PASSWORD, le premier demarrage d'une base sans compte cree
 `admin@gali-blue.test` avec le mot de passe aleatoire remis au proprietaire du projet.
@@ -71,13 +75,20 @@ Le conteneur ne dispose que de son hash bcrypt dans `deployment/bootstrap-admin.
 Pour utiliser cet acces, supprimer les anciennes variables ADMIN_EMAIL/ADMIN_PASSWORD
 de demonstration (notamment les valeurs REPLACE_...), puis redeployer.
 
-Changer ce mot de passe dans Personnel > modifier l'administrateur apres la premiere
-connexion, avant toute utilisation reelle. Les redeploiements conservent le nouveau hash.
+Pour un nouveau compte deployee, changer ce mot de passe dans **Mon compte** : le
+renouvellement est obligatoire avant l'acces au dashboard. Votre administrateur deja
+present n'est pas reinitialise. Les redeploiements conservent le nouveau hash.
 Pour un acces personnalise des le premier demarrage, fournir vos propres variables
 ADMIN_EMAIL et ADMIN_PASSWORD. Retirer ADMIN_PASSWORD des variables une fois le compte cree.
 
 - Connexion : https://gali-blue-production.up.railway.app/connexion
 - Dashboard : https://gali-blue-production.up.railway.app/dashboard
+- Mon compte : https://gali-blue-production.up.railway.app/compte
+
+Roles et fonctionnement : [guide de l'equipe](../docs/GUIDE-UTILISATION.md).
+Les identifiants `.test` sont des acces de recette ; les remplacer par les identites
+reelles et desactiver les profils inutiles avant exploitation. Le manager ne peut
+pas creer un acces, changer un role ou intervenir sur le developpeur ADMIN.
 
 Le compte local `admin@gali-blue.local` / `admin` n'est pas cree ni copie sur Railway.
 Les mots de passe courts sont refuses par l'API en production.

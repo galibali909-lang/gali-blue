@@ -19,7 +19,7 @@ export function LoginForm({ setup, content }: { setup: boolean; content: SiteCon
       const response = await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...Object.fromEntries(new FormData(event.currentTarget)), setup }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
-      router.replace("/dashboard");
+      router.replace(result.mustChangePassword ? "/compte" : "/dashboard");
       router.refresh();
     } catch (error) { setError(error instanceof Error ? error.message : "Connexion impossible."); setBusy(false); }
   }

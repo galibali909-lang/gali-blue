@@ -10,7 +10,7 @@ import { localDateTime } from "@/lib/domain";
 
 const localMedia = z.string().max(300).refine(value => !value || /^\/(images\/[a-zA-Z0-9_.-]+|api\/media\/[a-zA-Z0-9_.-]+)$/.test(value), "Selectionnez un fichier de la mediatheque.");
 const coordinate = z.preprocess(value => value === "" || value === null ? null : value, z.coerce.number().min(0).max(100).nullable().optional());
-const tableSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(30), area: z.string().trim().min(1).max(50), seats: z.coerce.number().int().min(1).max(40), joinGroup: z.string().max(30).nullable().optional(), active: z.boolean(), planX: coordinate, planY: coordinate });
+const tableSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(30), area: z.string().trim().min(1).max(50), seats: z.coerce.number().int().min(1).max(40), joinGroup: z.string().max(30).nullable().optional(), active: z.boolean(), vip: z.boolean().optional(), planX: coordinate, planY: coordinate });
 const menuSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(100), description: z.string().max(2000), category: z.string().min(1).max(50), price: z.coerce.number().int().min(0).max(10000000), image: localMedia.nullable().optional(), allergens: z.string().max(300).nullable().optional(), available: z.boolean(), position: z.coerce.number().int().min(0).max(10000) });
 const staffSchema = z.object({ id: z.string().optional(), name: z.string().min(2).max(100), email: z.union([z.email(), z.literal("")]).optional(), phone: z.string().max(30).nullable().optional(), job: z.string().min(1).max(100), role: z.enum(["ADMIN", "MANAGER", "HOST", "SERVICE", "CASHIER", "EDITOR"]), password: z.string().max(72).optional(), image: localMedia.nullable().optional(), shift: z.string().max(200).nullable().optional(), active: z.boolean() });
 const settingsSchema = z.object({ onlineEnabled: z.boolean(), discountEnabled: z.boolean(), discountPercent: z.coerce.number().int().min(0).max(100), onlineAmount: z.coerce.number().int().min(0).max(10000000), maxGuests: z.coerce.number().int().min(1).max(40), durationMinutes: z.coerce.number().int().min(30).max(360), cleanupMinutes: z.coerce.number().int().min(0).max(120), holdMinutes: z.coerce.number().int().min(5).max(60), graceMinutes: z.coerce.number().int().min(0).max(120), serviceTimes: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).min(1).max(24), closedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(365) });
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         if (id) {
           const old = await transaction.diningTable.findUniqueOrThrow({ where: { id } });
           const occupied = await transaction.reservation.count({ where: { tables: { some: { id } }, endsAt: { gt: new Date() }, OR: [{ status: { in: ["PROVISIONAL", "RESERVED", "ARRIVED", "COMPLETED"] } }, { status: "PAYMENT_PENDING", holdUntil: { gt: new Date() } }] } });
-          if (occupied && (data.seats < old.seats || !data.active || data.area !== old.area || (data.joinGroup || null) !== old.joinGroup)) throw new HttpError("Cette table a des reservations. Reaffectez-les avant de reduire sa capacite ou de la desactiver.", 409);
+          if (occupied && (data.seats < old.seats || !data.active || data.area !== old.area || (data.vip !== undefined && data.vip !== old.vip) || (data.joinGroup || null) !== old.joinGroup)) throw new HttpError("Cette table a des reservations. Reaffectez-les avant de changer sa categorie, sa capacite ou son activation.", 409);
           await transaction.diningTable.update({ where: { id }, data: { ...data, joinGroup: data.joinGroup || null } });
         } else await transaction.diningTable.create({ data: { ...data, joinGroup: data.joinGroup || null } });
       }
@@ -50,11 +50,12 @@ export async function POST(request: Request) {
       if (resource === "staff") {
         const { id, password, ...data } = staffSchema.parse(raw.data);
         const old = id ? await transaction.staff.findUniqueOrThrow({ where: { id } }) : null;
-        if (actor.role !== "ADMIN" && (password || data.role !== "SERVICE" || (old && old.role !== "SERVICE"))) throw new HttpError("Seul un administrateur peut gerer les comptes et les roles.", 403);
+        if (actor.role !== "ADMIN" && (password || (old ? old.role === "ADMIN" || data.role !== old.role || data.active !== old.active || (data.email?.toLowerCase() || null) !== old.email : data.role !== "SERVICE" || Boolean(data.email)))) throw new HttpError("Seul un administrateur peut gerer les comptes, les roles et les acces.", 403);
         if (id === actor.id && (!data.active || data.role !== actor.role)) throw new HttpError("Vous ne pouvez pas retirer votre propre acces.");
-        if (old?.role === "ADMIN" && (data.role !== "ADMIN" || !data.active) && await transaction.staff.count({ where: { role: "ADMIN", active: true } }) <= 1) throw new HttpError("Conservez au moins un administrateur actif.");
-        if (password && (password.length < 12 || !data.email)) throw new HttpError("Un compte requiert un email et un mot de passe de 12 caracteres minimum.");
-        const staffData = { ...data, email: data.email?.toLowerCase() || null, ...(password ? { passwordHash: await hash(password, 12) } : {}) };
+        if (old?.role === "ADMIN" && old.passwordHash && (data.role !== "ADMIN" || !data.active) && await transaction.staff.count({ where: { role: "ADMIN", active: true, email: { not: null }, passwordHash: { not: null } } }) <= 1) throw new HttpError("Conservez au moins un administrateur actif.");
+        if (old?.passwordHash && !data.email) throw new HttpError("Conservez un email pour le compte de connexion.");
+        if (password && (password.length < 12 || Buffer.byteLength(password, "utf8") > 72 || !data.email)) throw new HttpError("Un compte requiert un email et un mot de passe de 12 caracteres minimum et 72 octets maximum.");
+        const staffData = { ...data, email: data.email?.toLowerCase() || null, ...(password ? { passwordHash: await hash(password, 12), mustChangePassword: true } : {}) };
         if (id) await transaction.staff.update({ where: { id }, data: { ...staffData, sessionVersion: { increment: 1 } } });
         else await transaction.staff.create({ data: staffData });
       }

@@ -53,7 +53,7 @@ model Settings {
   id               Int      @id @default(1)
   onlineEnabled    Boolean  @default(false)
   classicBookingEnabled Boolean @default(true)
-  floorBookingEnabled Boolean @default(false)
+  floorBookingEnabled Boolean @default(true)
   floorPlanImage String @default("/images/floor-plan-demo.jpg")
   discountEnabled  Boolean  @default(false)
   discountPercent  Int      @default(0)
@@ -77,6 +77,7 @@ model DiningTable {
   seats      Int
   joinGroup  String?
   active     Boolean       @default(true)
+  vip        Boolean       @default(false)
   planX      Float?
   planY      Float?
   requestedBookings Reservation[] @relation("RequestedTable")
@@ -99,6 +100,10 @@ model Reservation {
   method           PaymentMethod
   paymentStatus    PaymentStatus @default(ON_SITE_DUE)
   callStatus       CallStatus    @default(TO_CALL)
+  vip              Boolean       @default(false)
+  callAttempts     Int           @default(0)
+  lastCalledAt     DateTime?
+  nextCallAt       DateTime?
   amount           Int           @default(0)
   discountPercent  Int           @default(0)
   discountAmount   Int           @default(0)
@@ -140,6 +145,7 @@ model Staff {
   shift         String?
   active        Boolean       @default(true)
   sessionVersion Int          @default(1)
+  mustChangePassword Boolean  @default(false)
   bookings      Reservation[]
   createdAt     DateTime      @default(now())
 }

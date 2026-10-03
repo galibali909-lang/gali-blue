@@ -2,6 +2,9 @@
 CREATE TABLE `Settings` (
     `id` INTEGER NOT NULL DEFAULT 1,
     `onlineEnabled` BOOLEAN NOT NULL DEFAULT false,
+    `classicBookingEnabled` BOOLEAN NOT NULL DEFAULT true,
+    `floorBookingEnabled` BOOLEAN NOT NULL DEFAULT true,
+    `floorPlanImage` VARCHAR(191) NOT NULL DEFAULT '/images/floor-plan-demo.jpg',
     `discountEnabled` BOOLEAN NOT NULL DEFAULT false,
     `discountPercent` INTEGER NOT NULL DEFAULT 0,
     `onlineAmount` INTEGER NOT NULL DEFAULT 0,
@@ -27,6 +30,9 @@ CREATE TABLE `DiningTable` (
     `seats` INTEGER NOT NULL,
     `joinGroup` VARCHAR(191) NULL,
     `active` BOOLEAN NOT NULL DEFAULT true,
+    `vip` BOOLEAN NOT NULL DEFAULT false,
+    `planX` DOUBLE NULL,
+    `planY` DOUBLE NULL,
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `DiningTable_name_key`(`name`),
@@ -49,12 +55,17 @@ CREATE TABLE `Reservation` (
     `method` ENUM('ON_SITE', 'ONLINE') NOT NULL,
     `paymentStatus` ENUM('ON_SITE_DUE', 'PENDING', 'FAILED', 'PAID', 'REFUND_PENDING', 'REFUNDED') NOT NULL DEFAULT 'ON_SITE_DUE',
     `callStatus` ENUM('TO_CALL', 'NO_ANSWER', 'CONFIRMED', 'CANCEL_REQUESTED') NOT NULL DEFAULT 'TO_CALL',
+    `vip` BOOLEAN NOT NULL DEFAULT false,
+    `callAttempts` INTEGER NOT NULL DEFAULT 0,
+    `lastCalledAt` DATETIME(3) NULL,
+    `nextCallAt` DATETIME(3) NULL,
     `amount` INTEGER NOT NULL DEFAULT 0,
     `discountPercent` INTEGER NOT NULL DEFAULT 0,
     `discountAmount` INTEGER NOT NULL DEFAULT 0,
     `paidAmount` INTEGER NOT NULL DEFAULT 0,
     `note` TEXT NULL,
     `assignedStaffId` VARCHAR(191) NULL,
+    `requestedTableId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -91,6 +102,7 @@ CREATE TABLE `Staff` (
     `shift` VARCHAR(191) NULL,
     `active` BOOLEAN NOT NULL DEFAULT true,
     `sessionVersion` INTEGER NOT NULL DEFAULT 1,
+    `mustChangePassword` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `Staff_email_key`(`email`),
@@ -171,6 +183,9 @@ CREATE TABLE `_DiningTableToReservation` (
 
 -- AddForeignKey
 ALTER TABLE `Reservation` ADD CONSTRAINT `Reservation_assignedStaffId_fkey` FOREIGN KEY (`assignedStaffId`) REFERENCES `Staff`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reservation` ADD CONSTRAINT `Reservation_requestedTableId_fkey` FOREIGN KEY (`requestedTableId`) REFERENCES `DiningTable`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_reservationId_fkey` FOREIGN KEY (`reservationId`) REFERENCES `Reservation`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

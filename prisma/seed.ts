@@ -1,18 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { defaultContent } from "../src/lib/content";
 import { dateLabel, localDateTime } from "../src/lib/domain";
+import { demoFloorTables } from "../src/lib/floor-layout";
 
 const db = new PrismaClient();
 async function seed() {
   await db.settings.upsert({ where: { id: 1 }, update: {}, create: {
     id: 1, serviceTimes: ["12:00", "14:30", "19:00", "21:30"], closedDates: [], content: defaultContent,
   } });
-  if (await db.diningTable.count() === 0) await db.diningTable.createMany({ data: [
-    { name: "T01", area: "Salle", seats: 2, joinGroup: "A", planX: 21.8, planY: 19.4 }, { name: "T02", area: "Salle", seats: 2, joinGroup: "A", planX: 31.3, planY: 19.4 },
-    { name: "T03", area: "Salle", seats: 4, planX: 23.7, planY: 43.4 }, { name: "T04", area: "Salle", seats: 4, planX: 34, planY: 43.4 },
-    { name: "T05", area: "Terrasse", seats: 4, joinGroup: "B", planX: 84, planY: 39.5 }, { name: "T06", area: "Terrasse", seats: 4, joinGroup: "B", planX: 92.5, planY: 39.5 },
-    { name: "T07", area: "Terrasse", seats: 6, planX: 53.8, planY: 34.4 }, { name: "T08", area: "Bar", seats: 2, planX: 29.4, planY: 31 },
-  ] });
+  for (const table of demoFloorTables) await db.diningTable.upsert({ where: { name: table.name }, update: {}, create: table });
   if (await db.menuItem.count() === 0) await db.menuItem.createMany({ data: [
     { name: "Burrata & tomates de saison", category: "A partager", description: "Burrata cremeuse, tomates, basilic frais et huile d'olive.", price: 12000, image: "/images/burrata.jpg", allergens: "Lait", position: 0 },
     { name: "Tartare de saumon", category: "A partager", description: "Saumon, avocat, agrumes et notes de sesame.", price: 14500, image: "/images/salmon.jpg", allergens: "Poisson, sesame", position: 1 },

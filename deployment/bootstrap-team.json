@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "accounts": [
+    {
+      "id": "team-developer",
+      "name": "Developpeur GALI BLUE",
+      "email": "developpeur@gali-blue.test",
+      "job": "Developpement et administration",
+      "role": "ADMIN",
+      "passwordHash": "$2b$12$JQ5Pbndx.udcNfIUGhW2teGWvZLR88ujrvQucPn7yx/YsxpnffBa2"
+    },
+    {
+      "id": "team-manager",
+      "name": "Manager GALI BLUE",
+      "email": "manager@gali-blue.test",
+      "job": "Direction du restaurant",
+      "role": "MANAGER",
+      "passwordHash": "$2b$12$/OYt9.1GVR6xaX3MEn7Y6ewtkYvF.HK8sG7aguXPMbyk2wEjL9CvG"
+    },
+    {
+      "id": "team-host",
+      "name": "Accueil GALI BLUE",
+      "email": "accueil@gali-blue.test",
+      "job": "Accueil et reservations",
+      "role": "HOST",
+      "passwordHash": "$2b$12$7EJf.lD.GukrdZYCWqlM0e8QxVXDmAkprtoVImufd/xow1KMZe5.K"
+    },
+    {
+      "id": "team-service",
+      "name": "Service GALI BLUE",
+      "email": "service@gali-blue.test",
+      "job": "Service en salle",
+      "role": "SERVICE",
+      "passwordHash": "$2b$12$ISpk0oeD9tgNDNvTJ/2mkOTwmLdqtpIETD3pXvPrsswDP/vlJk/Qe"
+    },
+    {
+      "id": "team-cashier",
+      "name": "Caisse GALI BLUE",
+      "email": "caisse@gali-blue.test",
+      "job": "Encaissement",
+      "role": "CASHIER",
+      "passwordHash": "$2b$12$QUtvWMjkgpxHxwNpxvsZ0.cM6P7nyFqyzqEhb8h0qOMPGOMnEWlCW"
+    },
+    {
+      "id": "team-editor",
+      "name": "Communication GALI BLUE",
+      "email": "communication@gali-blue.test",
+      "job": "Carte et communication",
+      "role": "EDITOR",
+      "passwordHash": "$2b$12$FWL5VEVduVfPQYwdztyg3OjgsytG3VLH56f19VwcjzUwOdb5ME462"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteLink as Link } from "./site-navigation";
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, CreditCard, LoaderCircle, Phone, ShieldCheck, Utensils } from "lucide-react";
+import { ArrowLeft, ArrowRight, Armchair, Crown, Check, CheckCircle2, CreditCard, LoaderCircle, Phone, ShieldCheck, Utensils } from "lucide-react";
 import type { PublicData } from "@/lib/public-data";
 import { calculatePrice, dateLabel, money } from "@/lib/domain";
 import { GuestSelect } from "./guest-select";
@@ -10,11 +10,12 @@ import { BookingDatePicker } from "./booking-date-picker";
 import type { SiteContent } from "@/lib/content";
 import { BrandMark } from "./brand-mark";
 
-type InitialSelection = { tableId: string; tableName: string; date: string; time: string; guests: number };
+type InitialSelection = { tableId: string; tableName: string; date: string; time: string; guests: number; vip: boolean };
 export function ReservationForm({ settings, terms, content, initial }: { settings: PublicData["booking"]; terms: string; content: SiteContent; initial?: InitialSelection }) {
   const [step, setStep] = useState(1);
   const [date, setDate] = useState(initial?.date || settings.tomorrow);
-  const [guests, setGuests] = useState(initial?.guests || 2);
+  const [guests, setGuests] = useState(initial?.guests || Math.min(2, settings.maxGuests));
+  const [vip, setVip] = useState(initial?.vip || false);
   const [time, setTime] = useState(initial?.time || "");
   const [method, setMethod] = useState("ON_SITE");
   const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
@@ -25,21 +26,21 @@ export function ReservationForm({ settings, terms, content, initial }: { setting
   const [requestKey] = useState(() => typeof window !== "undefined" ? crypto.randomUUID() : "");
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/availability?date=${date}&guests=${guests}${initial ? `&tableId=${encodeURIComponent(initial.tableId)}` : ""}`, { signal: controller.signal }).then(async response => {
+    fetch(`/api/availability?date=${date}&guests=${guests}&vip=${vip ? "1" : "0"}${initial ? `&tableId=${encodeURIComponent(initial.tableId)}` : ""}`, { signal: controller.signal }).then(async response => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       setSlots(result.slots); setLoading(false);
       setTime(current => result.slots.some((slot: { time: string; available: boolean }) => slot.time === current && slot.available) ? current : "");
-    }).catch(error => { if (error.name !== "AbortError") { setError("Impossible de charger les disponibilites."); setLoading(false); } });
+    }).catch(error => { if (error.name !== "AbortError") { setError("Impossible de charger les disponibilites."); setLoading(false); setSlots([]); setTime(""); } });
     return () => controller.abort();
-  }, [date, guests, initial]);
+  }, [date, guests, vip, initial]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
     if (step === 1) { if (loading || !slots.some(slot => slot.time === time && slot.available)) return setError("Choisissez un horaire disponible."); setStep(2); return; }
     setBusy(true);
     const fields = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      const response = await fetch("/api/reservations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...fields, date, time, guests, method, tableId: initial?.tableId, requestKey: requestKey || crypto.randomUUID(), consent: fields.consent === "on" }) });
+      const response = await fetch("/api/reservations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...fields, date, time, guests, vip, method, tableId: initial?.tableId, requestKey: requestKey || crypto.randomUUID(), consent: fields.consent === "on" }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       setReference(result.reference);
@@ -50,6 +51,7 @@ export function ReservationForm({ settings, terms, content, initial }: { setting
   const price = calculatePrice(settings.onlineAmount * guests, method, settings.discountEnabled, settings.discountPercent);
   return <div className="reservation-layout"><form onSubmit={submit} className="reservation-form">
     {initial && <p className="booking-table-selection"><Utensils size={18}/> Table souhaitee : <strong>{initial.tableName}</strong> · <Link href="/salle">Changer de table</Link></p>}
+    {initial || step === 2 ? <p className="booking-category">{vip ? <Crown size={18}/> : <Armchair size={18}/>} Table {vip ? "VIP" : "standard"}</p> : <fieldset className="booking-category-options"><legend>Categorie de table</legend><div className="booking-category-segments">{[false, true].map(choice => <label className={vip === choice ? "selected" : ""} key={String(choice)}><input type="radio" name="seatingChoice" checked={vip === choice} onChange={() => { setVip(choice); setTime(""); setLoading(true); setError(""); }}/>{choice ? <Crown size={18}/> : <Armchair size={18}/>} {choice ? "VIP" : "Standard"}</label>)}</div></fieldset>}
     <div className="booking-steps"><span className={step === 1 ? "active" : "done"}><b>{step > 1 ? <Check size={15}/> : "01"}</b> Votre table</span><div/><span className={step === 2 ? "active" : ""}><b>02</b> Vos informations</span></div>
     <div hidden={step !== 1}><h2>Une place pour vous.</h2><p className="muted">Choisissez votre moment.</p><div className="form-grid">
       <BookingDatePicker value={date} minimum={settings.today} maximum={settings.lastDate} onChange={next => { setDate(next); setTime(""); setLoading(true); setError(""); }}/>

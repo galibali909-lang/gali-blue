@@ -77,11 +77,11 @@ try {
   await page.getByRole("link", { name: /^Reservations/ }).click();
   await page.getByLabel("Rechercher une reservation").fill(marker);
   await page.getByRole("button", { name: `Ouvrir la reservation de ${customer}` }).click();
-  await page.getByRole("button", { name: "Valider apres l'appel" }).click();
-  await expect(page.getByRole("dialog").locator(".detail-title")).toContainText("Provisoire");
+  await page.getByRole("button", { name: "Confirmer par telephone" }).click();
+  await expect(page.getByRole("dialog").locator(".detail-title")).toContainText("Confirmee par appel");
   await page.getByRole("button", { name: "Fermer", exact: true }).click();
   await page.getByRole("link", { name: "Salle & tables" }).click();
-  await expect(page.locator(".floor-table")).toHaveCount(8);
+  await expect(page.locator(".floor-table")).toHaveCount(await db.diningTable.count());
   await page.getByRole("link", { name: "Parametres", exact: true }).click();
   await expect(page.getByRole("switch", { name: /Paiement en ligne via CMI/ })).toBeDisabled();
   const imageBytes = await readFile(fileURLToPath(new URL("../public/images/interior.jpg", import.meta.url)));
@@ -126,7 +126,7 @@ try {
   expect(editorData.members).toEqual([]);
   await unauthorized.close();
   expect(errors).toEqual([]);
-  console.log("PASS: desktop/mobile, gallery, menu, reservation, auth, provisional status, MySQL settings, drafts, media upload, editor permissions and CSRF.");
+  console.log("PASS: desktop/mobile, gallery, menu, reservation, auth, phone confirmation, MySQL settings, drafts, media upload, editor permissions and CSRF.");
   console.log(`Screenshots: ${artifacts}`);
 } finally {
   const reservations = await db.reservation.findMany({ where: { name: customer }, select: { id: true } });

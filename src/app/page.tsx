@@ -10,7 +10,8 @@ import { WelcomeStrip } from "@/components/welcome-strip";
 
 export const dynamic = "force-dynamic";
 export default async function Home({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
-  const preview = (await searchParams).preview === "1" && ["ADMIN", "MANAGER", "EDITOR"].includes((await currentStaff())?.role || "");
+  const staff = (await searchParams).preview === "1" ? await currentStaff() : null;
+  const preview = Boolean(staff && !staff.mustChangePassword && ["ADMIN", "MANAGER", "EDITOR"].includes(staff.role));
   const { content, menu, events, gallery } = await publicData(preview);
   return <><Entrance content={content}/><a className="skip-link" href="#main">Aller au contenu</a>{preview && <div className="preview-banner">Apercu du brouillon <Link href="/dashboard?view=content">Retour au dashboard</Link></div>}<SiteNav content={content}/><main id="main"><Hero content={content}/>
     <WelcomeStrip phrases={[content.welcomePhrase1, content.welcomePhrase2, content.welcomePhrase3]}/>

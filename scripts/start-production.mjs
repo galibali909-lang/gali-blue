@@ -17,6 +17,7 @@ try {
   run("node_modules/prisma/build/index.js", ["migrate", "deploy"]);
   run("node_modules/tsx/dist/cli.mjs", ["prisma/seed.ts"]);
   run("node_modules/tsx/dist/cli.mjs", ["scripts/create-admin.ts", "--bootstrap"]);
+  run("node_modules/tsx/dist/cli.mjs", ["scripts/create-team.ts", "--bootstrap"]);
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0"], { stdio: "inherit", env: process.env });
   for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.kill(signal));
   server.on("error", () => { console.error("Demarrage du serveur impossible."); process.exitCode = 1; });

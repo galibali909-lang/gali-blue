@@ -8,5 +8,6 @@ export const metadata = { title: "Dashboard" };
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const staff = await currentStaff();
   if (!staff) redirect("/connexion");
+  if (staff.mustChangePassword) redirect("/compte");
   return <Dashboard initial={await dashboardData(staff)} initialView={(await searchParams).view || "overview"}/>;
 }

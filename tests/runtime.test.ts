@@ -9,6 +9,21 @@ import ts from "typescript";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
 
+test("Docker includes a hash-only team manifest and runs its idempotent bootstrap", async () => {
+  const dockerfile = await readFile(path.join(project, "Dockerfile"), "utf8");
+  const startup = await readFile(path.join(project, "scripts/start-production.mjs"), "utf8");
+  assert.match(dockerfile.split(/^FROM .+ AS runtime\s*$/m)[1], /COPY .*\/app\/deployment\/bootstrap-team\.json \.\/deployment\/bootstrap-team\.json/);
+  assert.match(startup, /run\("node_modules\/tsx\/dist\/cli\.mjs", \["scripts\/create-team\.ts", "--bootstrap"\]\)/);
+  const manifest = JSON.parse(await readFile(path.join(project, "deployment/bootstrap-team.json"), "utf8"));
+  assert.equal(manifest.version, 1);
+  assert.equal(manifest.accounts.length, 6);
+  assert.equal(new Set(manifest.accounts.map((account: { id: string }) => account.id)).size, 6);
+  for (const account of manifest.accounts) {
+    assert.equal(Object.hasOwn(account, "password"), false);
+    assert.match(account.passwordHash, /^\$2b\$12\$[./A-Za-z0-9]{53}$/);
+  }
+});
+
 test("Docker runtime includes and loads the seed's local dependencies", async () => {
   const dockerfile = await readFile(path.join(project, "Dockerfile"), "utf8");
   const runtime = dockerfile.split(/^FROM .+ AS runtime\s*$/m)[1];

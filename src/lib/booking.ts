@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma, BookingStatus } from "@prisma/client";
 import { db } from "./db";
 import { HttpError } from "./auth";
-import { allocateTables, canTransition, localDateTime, occupyingStatuses } from "./domain";
+import { allocateTables, bookingLabel, callLabels, canTransition, dateLabel, localDateTime, occupyingStatuses } from "./domain";
 
 export const cmiReady = false;
 export const bookingSchema = z.object({
@@ -19,6 +19,7 @@ export const bookingSchema = z.object({
   requestKey: z.string().uuid(),
   website: z.string().max(0).optional(),
   tableId: z.string().min(1).max(191).optional(),
+  vip: z.boolean().default(false),
 });
 export async function withBookingLock<Result>(operation: (transaction: Prisma.TransactionClient) => Promise<Result>) {
   return db.$transaction(async transaction => {
@@ -51,7 +52,7 @@ export async function createBooking(raw: unknown, actor = "Client") {
     if (startsAt.getTime() < Date.now() + 15 * 60000 || startsAt.getTime() > Date.now() + 180 * 86400000) throw new HttpError("Choisissez une date future dans les 6 prochains mois.");
     const endsAt = new Date(startsAt.getTime() + (settings.durationMinutes + settings.cleanupMinutes) * 60000);
     const available = await freeTables(transaction, startsAt, endsAt);
-    const selected = input.tableId ? available.filter(table => table.id === input.tableId && table.seats >= input.guests && table.planX !== null && table.planY !== null) : allocateTables(available, input.guests);
+    const selected = input.tableId ? available.filter(table => table.id === input.tableId && table.seats >= input.guests && table.planX !== null && table.planY !== null) : allocateTables(available.filter(table => table.vip === input.vip), input.guests);
     if (input.tableId && !selected?.length) throw new HttpError("Cette table n'est plus disponible pour ce service ou ce nombre de personnes.", 409);
     if (!selected) throw new HttpError("Aucune table compatible n'est disponible pour ce service.", 409);
     const reservation = await transaction.reservation.create({ data: {
@@ -59,6 +60,7 @@ export async function createBooking(raw: unknown, actor = "Client") {
       requestKey: input.requestKey, name: input.name, phone: input.phone, email: input.email || null,
       guests: input.guests, startsAt, endsAt, method: input.method, note: input.note,
       requestedTableId: input.tableId || null,
+      vip: input.tableId ? available.find(table => table.id === input.tableId)!.vip : input.vip,
       status: "CALL_PENDING", paymentStatus: "ON_SITE_DUE",
       audits: { create: { actor, action: "CREATION", detail: `Demande enregistree, paiement sur place, aucune remise.${input.tableId ? ` Table souhaitee : ${available.find(table => table.id === input.tableId)!.name}.` : ""}` } },
     } });
@@ -72,6 +74,7 @@ export const bookingUpdateSchema = z.object({
   tableIds: z.array(z.string()).max(20).optional(), staffId: z.string().nullable().optional(),
   paidAmount: z.coerce.number().int().min(1).max(100000000).optional(),
   note: z.string().trim().max(1000).optional(),
+  nextCallAt: z.string().datetime({ offset: true }).optional(),
 });
 export async function updateBooking(raw: unknown, actor: { name: string; role: string; id: string }) {
   const input = bookingUpdateSchema.parse(raw);
@@ -82,37 +85,53 @@ export async function updateBooking(raw: unknown, actor: { name: string; role: s
     const manager = ["ADMIN", "MANAGER", "HOST"].includes(actor.role);
     const data: Prisma.ReservationUpdateInput = {};
     let detail = "";
-    if (input.action === "transition") {
-      const next = input.status!;
+    const confirmCall = input.action === "call" && input.callStatus === "CONFIRMED";
+    const cancelCall = input.action === "call" && input.callStatus === "CANCEL_REQUESTED";
+    if (input.action === "transition" || confirmCall || cancelCall) {
+      const next = confirmCall ? "RESERVED" : cancelCall ? "CANCELLED" : input.status!;
       const serviceAllowed = actor.role === "SERVICE" && reservation.assignedStaffId === actor.id && ["ARRIVED", "COMPLETED"].includes(next);
       if (!manager && !serviceAllowed) throw new HttpError("Action non autorisee.", 403);
       if (!next || !canTransition(reservation.status, next)) throw new HttpError("Transition de statut non autorisee.", 409);
-      if (next === "PROVISIONAL") {
+      if (next === "RESERVED") {
         if (reservation.startsAt <= new Date()) throw new HttpError("Le service est deja passe.", 409);
-        const available = await freeTables(transaction, reservation.startsAt, reservation.endsAt, reservation.id);
+        const available = (await freeTables(transaction, reservation.startsAt, reservation.endsAt, reservation.id)).filter(table => table.vip === reservation.vip);
         const preferred = reservation.requestedTableId ? available.find(table => table.id === reservation.requestedTableId && table.seats >= reservation.guests) : null;
         if (reservation.requestedTableId && !preferred) throw new HttpError("La table souhaitee n'est plus disponible. Recontactez le client avant de modifier son placement.", 409);
         const selected = preferred ? [preferred] : allocateTables(available, reservation.guests);
         if (!selected) throw new HttpError("Plus de table compatible disponible.", 409);
         data.tables = { set: selected.map(table => ({ id: table.id })) };
         data.callStatus = "CONFIRMED";
+        data.callAttempts = { increment: 1 };
+        data.lastCalledAt = new Date();
       }
       if (next === "NO_SHOW" && Date.now() < reservation.startsAt.getTime() + settings.graceMinutes * 60000) throw new HttpError("Le delai de grace n'est pas ecoule.");
       if (next === "ARRIVED" && (Date.now() < reservation.startsAt.getTime() - 60 * 60000 || Date.now() > reservation.endsAt.getTime())) throw new HttpError("L'arrivee doit correspondre au service reserve.");
       if (next === "COMPLETED") data.endsAt = new Date(Date.now() + settings.cleanupMinutes * 60000);
       if (next === "CANCELLED" && reservation.paymentStatus === "PAID") data.paymentStatus = "REFUND_PENDING";
+      if (next === "CANCELLED") data.callStatus = "CANCEL_REQUESTED";
       data.status = next;
-      detail = `${reservation.status} -> ${next}${input.note ? ` : ${input.note}` : ""}`;
+      data.nextCallAt = null;
+      if (cancelCall) { data.callAttempts = { increment: 1 }; data.lastCalledAt = new Date(); }
+      detail = `${bookingLabel(reservation.status, reservation.callStatus)} -> ${bookingLabel(next, next === "RESERVED" ? "CONFIRMED" : reservation.callStatus)}${input.note ? ` : ${input.note}` : ""}`;
     } else if (input.action === "call") {
       if (!manager || !input.callStatus) throw new HttpError("Action non autorisee.", 403);
+      if (reservation.status !== "CALL_PENDING") throw new HttpError("Le suivi d'appel concerne une demande non encore confirmee.", 409);
       data.callStatus = input.callStatus;
-      detail = `Appel : ${input.callStatus}${input.note ? ` - ${input.note}` : ""}`;
+      if (input.callStatus === "NO_ANSWER") {
+        const nextCallAt = input.nextCallAt ? new Date(input.nextCallAt) : new Date(Math.min(Date.now() + 30 * 60000, reservation.startsAt.getTime() - 5 * 60000));
+        if (nextCallAt.getTime() <= Date.now() || nextCallAt >= reservation.startsAt) throw new HttpError("Le rappel doit etre futur et preceder le service.");
+        data.nextCallAt = nextCallAt;
+        data.lastCalledAt = new Date();
+        data.callAttempts = { increment: 1 };
+      } else data.nextCallAt = null;
+      detail = `Appel : ${callLabels[input.callStatus]}${data.nextCallAt instanceof Date ? ` ; rappel le ${dateLabel(data.nextCallAt)}` : ""}${input.note ? ` - ${input.note}` : ""}`;
     } else if (input.action === "assign") {
       if (!manager) throw new HttpError("Action non autorisee.", 403);
       if (!["PROVISIONAL", "RESERVED"].includes(reservation.status)) throw new HttpError("Affectation possible sur une reservation provisoire ou reservee.");
       if (input.tableIds) {
         const free = await freeTables(transaction, reservation.startsAt, reservation.endsAt, reservation.id);
         const selected = free.filter(table => input.tableIds!.includes(table.id));
+        if (selected.some(table => table.vip !== reservation.vip)) throw new HttpError("La categorie standard ou VIP doit correspondre au choix du client.", 409);
         if (!selected.length || selected.length !== input.tableIds.length || selected.reduce((sum, table) => sum + table.seats, 0) < reservation.guests) throw new HttpError("Tables indisponibles ou capacite insuffisante.", 409);
         if (selected.length > 1 && (!selected[0].joinGroup || !selected.every(table => table.area === selected[0].area && table.joinGroup === selected[0].joinGroup))) throw new HttpError("Ces tables ne peuvent pas etre reunies.");
         data.tables = { set: selected.map(table => ({ id: table.id })) };

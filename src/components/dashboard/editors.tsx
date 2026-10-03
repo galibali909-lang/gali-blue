@@ -16,12 +16,15 @@ export function StaffView({ data, mutate }: Props) {
   const [editing, setEditing] = useState<FormValues | null>(null);
   const fields: Field[] = [
     { name: "name", label: "Nom complet", required: true }, { name: "job", label: "Fonction", required: true },
-    { name: "email", label: "Email", type: "email" }, { name: "phone", label: "Telephone" },
-    { name: "role", label: "Role", type: "select", options: Object.entries(roleLabels).filter(([key]) => data.staff.role === "ADMIN" || key === "SERVICE").map(([value, label]) => ({ value, label })) },
+    { name: "phone", label: "Telephone" },
+    ...(data.staff.role === "ADMIN" ? [
+      { name: "email", label: "Email", type: "email" as const },
+      { name: "role", label: "Role", type: "select" as const, options: Object.entries(roleLabels).map(([value, label]) => ({ value, label })) },
+    ] : []),
     { name: "shift", label: "Planning / affectation", hint: "Ex. Soir, 18:00-01:00, terrasse" },
     imageField(data),
     ...(data.staff.role === "ADMIN" ? [{ name: "password", label: "Mot de passe du compte", type: "password" as const, full: true, hint: "Facultatif pour une fiche sans acces. 12 caracteres minimum pour creer ou changer un acces." }] : []),
-    { name: "active", label: "Membre actif", type: "checkbox", full: true },
+    ...(data.staff.role === "ADMIN" ? [{ name: "active", label: "Membre actif", type: "checkbox" as const, full: true }] : []),
   ];
   return <><div className="section-toolbar"><h2>{data.members.length} membres</h2><button className="button blue small" onClick={() => setEditing({ name: "", job: "Service", role: "SERVICE", active: true })}><Plus size={16}/> Ajouter un membre</button></div><div className="table-wrap"><table className="data-table"><thead><tr><th>MEMBRE</th><th>FONCTION</th><th>ROLE</th><th>PLANNING</th><th>STATUT</th><th/></tr></thead><tbody>{data.members.map(member => <tr key={member.id}><td><div className="customer-cell"><span className="avatar">{member.image ? <Image src={member.image} alt="" fill sizes="33px"/> : member.name.slice(0, 2).toUpperCase()}</span><div><strong>{member.name}</strong><small>{member.email || "Sans email"}</small></div></div></td><td>{member.job}</td><td>{roleLabels[member.role]}</td><td>{member.shift || "Non renseigne"}</td><td><Badge status={member.active ? "active" : "inactive"} label={member.active ? "Actif" : "Inactif"}/></td><td><button className="icon-button" title="Modifier" aria-label={`Modifier ${member.name}`} onClick={() => setEditing({ ...member })}><Pencil size={15}/></button></td></tr>)}</tbody></table></div>{editing && <Modal title={editing.id ? "Modifier le membre" : "Ajouter un membre"} onClose={() => setEditing(null)}><FieldsForm fields={fields} initial={editing} onSave={async values => { await mutate("staff", values); setEditing(null); }}/></Modal>}</>;
 }

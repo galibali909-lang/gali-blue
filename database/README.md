@@ -18,11 +18,13 @@ Le seed contient les reglages et la carte de demonstration, mais aucun compte ni
 ## Import SQL manuel alternatif
 
 Selectionner une base vide dans votre client MySQL et importer `schema.sql`.
-Configurer DATABASE_URL vers cette meme base, puis marquer la migration initiale appliquee :
+Configurer DATABASE_URL vers cette meme base. Ce fichier est le schema actuel complet,
+pas celui de la seule migration initiale : sur une base vide importee uniquement,
+marquer toutes les migrations de structure correspondantes appliquees avant le seed :
 
-```sh
-npx prisma migrate resolve --applied 20261001195406_init
-npm run db:seed
+```powershell
+Get-ChildItem prisma/migrations -Directory | ForEach-Object { npx.cmd prisma migrate resolve --applied $_.Name }
+npm.cmd run db:seed
 ```
 
 Ne pas combiner l'import SQL et `migrate deploy` sans cette etape de suivi.

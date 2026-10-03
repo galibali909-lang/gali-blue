@@ -20,6 +20,19 @@ npm.cmd run dev -- --hostname 127.0.0.1
 - Reservation : http://localhost:3000/reserver
 - Premier compte et connexion : http://localhost:3000/connexion
 - Dashboard : http://localhost:3000/dashboard
+- Mon compte : http://localhost:3000/compte
+
+Guide complet des roles, parcours et cas d'usage : [Guide d'utilisation](docs/GUIDE-UTILISATION.md).
+Presentation GALI BLUE : [PDF](docs/GALI-BLUE-presentation.pdf) et [PowerPoint](docs/GALI-BLUE-presentation.pptx).
+Six acces personnels de recette sont initialises une seule fois par `scripts/create-team.ts` :
+ADMIN developpeur, MANAGER, HOST, SERVICE, CASHIER et EDITOR, avec identifiants `.test`.
+Les mots de passe aleatoires sont remis separement dans un fichier prive hors depot ;
+seuls les hashes bcrypt sont deployes. Le premier renouvellement est obligatoire avant
+acces au dashboard. Le bootstrap conserve tous les comptes existants, y compris inactifs,
+et ne remplace jamais un mot de passe modifie. ADMIN seul gere roles, emails et acces ;
+MANAGER gere l'exploitation et les fiches professionnelles, sans modifier le developpeur.
+`npm run team:local` initialise ces acces sur la base locale uniquement. Le demarrage
+Railway les initialise apres les migrations et le compte historique, au prochain deploiement.
 
 Le premier administrateur choisit lui-meme son mot de passe sur la page de connexion.
 Il n'existe aucun mot de passe par defaut. L'initialisation est limitee au mode local,
@@ -60,7 +73,7 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 - Calendrier de reservation francais React DayPicker dans un panneau Radix, avec dates passees et dates au-dela de la limite desactivees.
 - Carte filtree par categorie, galerie plein ecran, evenements publies et informations legales.
 - Reservation en deux etapes, disponibilite reelle par table/service, consentement et reference unique.
-- Paiement au restaurant, suivi telephonique, validation provisoire, arrivee, depart, absence et annulation.
+- Paiement au restaurant, appels et rappels traces, confirmation atomique, arrivee, depart, absence et annulation.
 - Controle transactionnel des conflits de tables ; regroupement uniquement entre tables compatibles du meme espace.
 - Dashboard avec filtres, suivi des appels, affectation de tables et de personnel, encaissement sur place et historique.
 - Gestion des tables, places, espaces, groupes de tables, services, fermetures globales et delai de grace.
@@ -74,9 +87,11 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 
 ## Cycle de reservation
 
-Paiement sur place : CALL_PENDING -> PROVISIONAL -> ARRIVED -> COMPLETED.
-La validation en PROVISIONAL enregistre la confirmation telephonique et affecte les tables.
-CALL_PENDING ne bloque pas de table. Une reservation provisoire, reservee ou en cours
+Paiement sur place : CALL_PENDING -> RESERVED -> ARRIVED -> COMPLETED.
+**Confirmer par telephone** enregistre l'appel et affecte les tables dans la meme transaction.
+Sans reponse, la demande reste CALL_PENDING / NO_ANSWER avec tentatives, dernier appel
+et prochain rappel ; elle ne bloque rien. Le suivi affiche **A rappeler**.
+CALL_PENDING ne bloque pas de table. Une reservation historique provisoire, confirmee ou en cours
 occupe les tables pendant son intervalle ; le depart ajoute le temps de preparation.
 CANCELLED libere la capacite. NO_SHOW n'est autorise qu'apres le delai de grace.
 Les dates, places et durees sont verifiees cote serveur, pas seulement dans le formulaire.
@@ -180,6 +195,8 @@ npm.cmd run test:responsive
 npm.cmd run test:experience
 npm.cmd run test:events
 npm.cmd run test:floor
+npm.cmd run test:accounts
+npm.cmd run docs:generate
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -187,7 +204,7 @@ et le build de production. Les tests MySQL utilisent la salle de demonstration
 et des demandes temporaires a une date future. Ne pas executer ces tests sur une base de production.
 
 `test:ui` requiert le serveur local et Microsoft Edge. Il teste ordinateur/mobile,
-carte, galerie, reservation, connexion, validation provisoire, reglages, brouillons,
+carte, galerie, reservation, connexion, confirmation par appel, reglages, brouillons,
 protection d'origine et acces anonyme. Captures dans storage/checks. Utiliser uniquement
 une base locale de test ; le test restaure les reglages qu'il modifie.
 
@@ -220,9 +237,14 @@ test modifiant la base.
 
 ## Reservation sur plan 2D
 
-Dans **Parametres**, les interrupteurs **Reservation classique** et **Reservation sur plan 2D** sont independants ; au moins un parcours doit rester actif. Le plan est desactive par defaut. Une fois active, il est accessible sur `/salle` et depuis la page de reservation.
+Dans **Parametres**, les interrupteurs **Reservation classique** et **Reservation sur plan 2D** sont independants ; au moins un parcours doit rester actif. Les deux parcours sont actifs apres la migration VIP. Le plan est accessible sur `/salle` et depuis la page de reservation.
 
-Le plan fourni est une demonstration : ses huit marqueurs correspondent aux tables existantes, pas a un inventaire de toutes les tables dessinees. **Image du plan de salle** permet de choisir un autre fichier de la mediatheque. Dans **Salle & tables**, modifier une table permet de placer son marqueur par clic ou par coordonnees en pourcentage.
+Le plan fourni est une demonstration complete : **38 unites, T01 a T37 et BAR, dont 9 VIP**. BAR est un comptoir collectif indicatif. Capacites et classement VIP sont a valider avec la salle reelle ; aucun tarif VIP n'est implemente. **Image du plan de salle** permet de choisir un autre fichier de la mediatheque. Dans **Salle & tables**, modifier une table permet de placer son marqueur par clic ou par coordonnees en pourcentage et choisir sa categorie VIP.
+
+Le formulaire classique propose Standard/VIP ; le plan derive la categorie de la table reelle.
+La confirmation et la reaffectation respectent cette categorie. Un filtre Toutes/Standard/VIP
+et une liste complete accompagnent le plan ; les cibles restent distinctes sur une surface
+defilante mobile, sans debordement de la page.
 
 Les disponibilites sont calculees pour la date, le service et le nombre de convives. Une table libre ouvre un popup puis le formulaire pre-rempli ; une table incompatible ou occupee affiche **Pas disponible**. La table souhaitee est conservee dans le dossier. La demande reste **CALL_PENDING**, ne bloque rien avant l'appel et ne constitue pas une reservation immediate. La validation par l'equipe recontrole et affecte exactement la table souhaitee ; en cas de conflit, elle est refusee, sans changement de table silencieux.
 
@@ -238,6 +260,18 @@ et comptes temporaires. Les tableaux larges defilent dans leur propre conteneur.
 
 L'override deepmerge-ts >=8 corrige une alerte transitive de Prisma CLI. Le schema,
 les tests et le build doivent etre revalides lors d'une mise a jour de Prisma.
+
+`test:accounts` verifie les six roles, premier renouvellement mobile, invalidation de
+sessions, desactivation, absence de secrets dans les reponses et refus des mutations
+hors role. SERVICE ne recoit que ses dossiers ; CASHIER recoit uniquement les dossiers
+installes/termines avec coordonnees et notes masquees ; EDITOR ne recoit aucune donnee
+operationnelle. Aucune recuperation par email ou 2FA n'est implementee.
+
+`docs:generate` produit 25 pages PDF et 25 diapositives PowerPoint a partir des rapports
+de recette locaux. Il verifie le PDF, les XML du PowerPoint, les images et les limites
+de texte via Edge, sans lire les fichiers d'acces prives. Le HTML est un apercu d'impression.
+Pour regenerer sur une nouvelle machine, executer d'abord les recettes des reservations,
+du plan et des comptes ; leurs rapports restent dans `storage/checks`, hors Git.
 
 ## Avant mise en production
 

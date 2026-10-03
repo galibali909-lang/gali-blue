@@ -2,24 +2,27 @@ import moment from "moment-timezone";
 
 export const TIMEZONE = "Africa/Casablanca";
 export const bookingLabels: Record<string, string> = {
-  CALL_PENDING: "En attente d'appel", PAYMENT_PENDING: "Paiement en cours",
-  PROVISIONAL: "Provisoire", RESERVED: "Reservee", ARRIVED: "Client arrive",
-  COMPLETED: "Honoree", CANCELLED: "Annulee", EXPIRED: "Expiree", NO_SHOW: "Non honoree",
+  CALL_PENDING: "En attente d'appel", RESERVED: "Confirmee par appel", ARRIVED: "Clients installes",
+  COMPLETED: "Terminee", CANCELLED: "Annulee", NO_SHOW: "Clients absents",
 };
 export const paymentLabels: Record<string, string> = {
   ON_SITE_DUE: "A regler sur place", PENDING: "En attente", FAILED: "Echoue",
   PAID: "Paye", REFUND_PENDING: "Remboursement a traiter", REFUNDED: "Rembourse",
 };
 export const callLabels: Record<string, string> = {
-  TO_CALL: "A appeler", NO_ANSWER: "Sans reponse", CONFIRMED: "Confirme par telephone", CANCEL_REQUESTED: "Annulation demandee",
+  TO_CALL: "A appeler", NO_ANSWER: "Sans reponse - a rappeler", CONFIRMED: "Confirme par telephone", CANCEL_REQUESTED: "Annulation enregistree",
 };
+export const phoneBookingStatuses = ["CALL_PENDING", "RESERVED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"];
+export function bookingLabel(status: string, callStatus: string) {
+  return status === "CALL_PENDING" && callStatus === "NO_ANSWER" ? "A rappeler" : bookingLabels[status] || ({ PROVISIONAL: "Ancienne confirmation", PAYMENT_PENDING: "Paiement en cours", EXPIRED: "Expiree" } as Record<string, string>)[status] || status;
+}
 export const roleLabels: Record<string, string> = {
   ADMIN: "Administrateur", MANAGER: "Manager", HOST: "Accueil", SERVICE: "Service", CASHIER: "Caisse", EDITOR: "Editeur",
 };
 export const transitions: Record<string, string[]> = {
-  CALL_PENDING: ["PROVISIONAL", "CANCELLED"],
+  CALL_PENDING: ["RESERVED", "CANCELLED"],
   PAYMENT_PENDING: ["CANCELLED"],
-  PROVISIONAL: ["ARRIVED", "CANCELLED", "NO_SHOW"],
+  PROVISIONAL: ["RESERVED", "CANCELLED"],
   RESERVED: ["ARRIVED", "CANCELLED", "NO_SHOW"],
   ARRIVED: ["COMPLETED"],
   COMPLETED: [], CANCELLED: [], EXPIRED: [], NO_SHOW: [],

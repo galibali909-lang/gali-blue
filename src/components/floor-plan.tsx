@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Armchair, ArrowRight, LayoutGrid, LoaderCircle, X } from "lucide-react";
+import { Armchair, Crown, ArrowRight, LayoutGrid, LoaderCircle, X } from "lucide-react";
 import { SiteLink as Link } from "./site-navigation";
 import { BookingDatePicker } from "./booking-date-picker";
 import { GuestSelect } from "./guest-select";
@@ -10,7 +10,7 @@ import type { PublicData } from "@/lib/public-data";
 import { dateLabel } from "@/lib/domain";
 import "./floor-plan.css";
 
-type PlanTable = { id: string; name: string; area: string; seats: number; planX: number; planY: number; available: boolean };
+type PlanTable = { id: string; name: string; area: string; seats: number; vip: boolean; planX: number; planY: number; available: boolean };
 type Slot = { time: string; available: boolean; tables: PlanTable[] };
 
 export function BookingModes({ settings, active }: { settings: PublicData["booking"]; active: "classic" | "floor" }) {
@@ -22,7 +22,8 @@ export function BookingModes({ settings, active }: { settings: PublicData["booki
 
 export function FloorPlan({ settings }: { settings: PublicData["booking"] }) {
   const [date, setDate] = useState(settings.tomorrow);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(Math.min(2, settings.maxGuests));
+  const [category, setCategory] = useState("ALL");
   const [time, setTime] = useState("");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +42,10 @@ export function FloorPlan({ settings }: { settings: PublicData["booking"] }) {
     return () => controller.abort();
   }, [date, guests]);
   useEffect(() => { if (selected) dialog.current?.showModal(); }, [selected]);
-  const tables = slots.find(slot => slot.time === time)?.tables || [];
+  const tables = (slots.find(slot => slot.time === time)?.tables || []).filter(table => category === "ALL" || table.vip === (category === "VIP"));
   function reset() { setLoading(true); setError(""); setSelected(null); }
   function tableButton(table: PlanTable, onPlan = false) {
-    return <button key={table.id} type="button" disabled={loading} className={`${onPlan ? "plan-table" : "plan-table-list-item"} ${table.available ? "available" : "unavailable"}`} style={onPlan ? { left: `${table.planX}%`, top: `${table.planY}%` } : undefined} aria-label={`${table.name}, ${table.seats} places, ${table.available ? "Disponible" : "Pas disponible"}`} title={`${table.name} · ${table.seats} places · ${table.available ? "Disponible" : "Pas disponible"}`} onClick={() => setSelected(table)}><Armchair size={onPlan ? 17 : 20}/><strong>{table.name}</strong>{!onPlan && <span>{table.seats} places · {table.available ? "Disponible" : "Pas disponible"}</span>}</button>;
+    return <button key={table.id} type="button" disabled={loading} className={`${onPlan ? "plan-table" : "plan-table-list-item"} ${table.available ? "available" : "unavailable"} ${table.vip ? "vip" : ""}`} style={onPlan ? { left: `${table.planX}%`, top: `${table.planY}%` } : undefined} aria-label={`${table.name}, ${table.seats} places, ${table.available ? "Disponible" : "Pas disponible"}${table.vip ? ", VIP" : ""}`} title={`${table.name} · ${table.seats} places · ${table.available ? "Disponible" : "Pas disponible"}${table.vip ? " · VIP" : ""}`} onClick={() => setSelected(table)}>{table.vip ? <Crown size={onPlan ? 17 : 20}/> : <Armchair size={onPlan ? 17 : 20}/>}<strong>{table.name}</strong>{onPlan && table.vip && <small className="plan-vip-label">VIP</small>}{!onPlan && <span>{table.seats} places · {table.vip ? "VIP · " : ""}{table.available ? "Disponible" : "Pas disponible"}</span>}</button>;
   }
   return <section className="floor-booking" aria-label="Plan de salle">
     <div className="plan-filters">
@@ -52,6 +53,7 @@ export function FloorPlan({ settings }: { settings: PublicData["booking"] }) {
       <GuestSelect value={guests} maximum={settings.maxGuests} onChange={next => { reset(); setGuests(next); setTime(""); }}/>
       <label>Service<select aria-label="Service" disabled={loading} value={time} onChange={event => { setTime(event.target.value); setSelected(null); }}>{!time && <option value="">Horaire</option>}{slots.map(slot => <option key={slot.time} value={slot.time}>{slot.time}</option>)}</select></label>
     </div>
+    <fieldset className="booking-category-options"><legend>Categorie de table</legend><div className="booking-category-segments">{[["ALL", "Toutes"], ["STANDARD", "Standard"], ["VIP", "VIP"]].map(([value, label]) => <label className={category === value ? "selected" : ""} key={value}><input type="radio" name="planCategory" checked={category === value} onChange={() => setCategory(value)}/>{value === "VIP" ? <Crown size={16}/> : <Armchair size={16}/>} {label}</label>)}</div></fieldset>
     <div className="plan-caption"><span className="eyebrow">VOTRE PLACE, VOTRE MOMENT</span><div className="plan-legend"><span><i className="available"/>Disponible</span><span><i className="unavailable"/>Pas disponible</span></div></div>
     {error && <p className="form-error" role="alert">{error}</p>}
     <div className="plan-scroll" tabIndex={0} aria-label="Plan de salle defilant"><div className="plan-canvas">
@@ -61,7 +63,7 @@ export function FloorPlan({ settings }: { settings: PublicData["booking"] }) {
     </div></div>
     {!loading && !error && <div className="plan-table-list">{tables.map(table => tableButton(table))}</div>}
     <dialog ref={dialog} className="plan-dialog" onCancel={() => setSelected(null)} onClose={() => setSelected(null)} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }} aria-labelledby="plan-dialog-title">
-      {selected && <><button type="button" className="icon-button plan-close" title="Fermer" aria-label="Fermer" onClick={() => dialog.current?.close()}><X size={20}/></button><Armchair size={35}/><p className="eyebrow">{selected.area}</p><h2 id="plan-dialog-title">Table {selected.name}</h2><p>{selected.seats} places · {guests} convives</p><p>{dateLabel(`${date}T12:00:00`, "dd/MM/yyyy")} · {time}</p>
+      {selected && <><button type="button" className="icon-button plan-close" title="Fermer" aria-label="Fermer" onClick={() => dialog.current?.close()}><X size={20}/></button>{selected.vip ? <Crown size={35}/> : <Armchair size={35}/>}<p className="eyebrow">{selected.area}{selected.vip ? " · VIP" : ""}</p><h2 id="plan-dialog-title">Table {selected.name}</h2><p>{selected.seats} places · {guests} convives</p><p>{dateLabel(`${date}T12:00:00`, "dd/MM/yyyy")} · {time}</p>
         {selected.available ? <><p className="plan-status available">Disponible</p><Link className="button blue" href={`/reserver?${new URLSearchParams({ table: selected.id, date, time, guests: String(guests) })}`}>Reserver cette table <ArrowRight size={17}/></Link><p className="muted">Sous reserve de confirmation par notre equipe.</p></> : <><p className="plan-status unavailable" role="status">Pas disponible</p><p>Cette table est indisponible pour ce service ou ce nombre de personnes.</p><button type="button" className="button outline" onClick={() => dialog.current?.close()}>Fermer <X size={16}/></button></>}
       </>}
     </dialog>
