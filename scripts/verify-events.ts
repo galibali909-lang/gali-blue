@@ -46,10 +46,7 @@ async function main() {
     await expect(page.locator(".welcome-glass").first()).toHaveCSS("color", "rgb(1, 37, 143)");
     const initialTransform = await track.evaluate(element => getComputedStyle(element).transform);
     await expect.poll(() => track.evaluate(element => getComputedStyle(element).transform)).not.toBe(initialTransform);
-    await page.getByRole("button", { name: "Mettre le bandeau en pause" }).click();
-    await expect(track).toHaveCSS("animation-play-state", "paused");
-    await expect(page.locator(".welcome-glass").first()).toHaveCSS("animation-play-state", "paused");
-    await page.getByRole("button", { name: "Relancer le bandeau" }).click();
+    await expect(banner.getByRole("button")).toHaveCount(0);
     await expect(track).toHaveCSS("animation-play-state", "running");
     const first = await db.event.create({ data: { id: ids[0], title: "Blue Sessions", description: "Une soiree de musique, de cocktails et de conversations.", date: new Date(Date.now() + 14 * 86400000), published: true, position: 30, image: "/images/cocktail.jpg" } });
     expect(await selectedIds()).toEqual([ids[0]]);
@@ -79,8 +76,11 @@ async function main() {
     await page.locator(".site-nav").scrollIntoViewIfNeeded();
     await expect(page.locator(".bar-scene")).toHaveAttribute("data-playing", "false");
     await page.locator(".bar-scene").scrollIntoViewIfNeeded();
-    await page.getByRole("button", { name: "Mettre l'animation en pause" }).click();
+    await expect(page.locator(".bar-play")).toHaveCount(0);
+    await page.locator(".bar-moment").hover();
     await expect(page.locator(".bar-scene")).toHaveAttribute("data-playing", "false");
+    await page.mouse.move(0, 0);
+    await expect(page.locator(".bar-scene")).toHaveAttribute("data-playing", "true");
     await page.locator(".bar-tabs [role=tab]").first().focus();
     await page.keyboard.press("ArrowRight");
     await expect(page.locator(".bar-moment")).toHaveAttribute("data-event-id", ids[1]);
@@ -159,7 +159,7 @@ async function main() {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(page.locator(".welcome-group[aria-hidden='true']")).toBeHidden();
-    await expect(page.locator(".welcome-play")).toBeHidden();
+    await expect(page.locator(".welcome-play")).toHaveCount(0);
     await page.setViewportSize({ width: 320, height: 740 });
     await banner.scrollIntoViewIfNeeded();
     expect(await banner.evaluate(element => [...element.querySelectorAll(".welcome-group:not([aria-hidden]) .welcome-phrase")].every(child => child.getBoundingClientRect().right <= innerWidth && child.scrollWidth <= child.clientWidth + 1))).toBe(true);
@@ -228,7 +228,7 @@ async function main() {
     await page.locator(".bar-event-actions .bar-link").click();
     await expect(page).toHaveURL(`${origin}/reserver`);
     expect(errors).toEqual([]);
-    console.log("PASS: events/order, blue-hour animation, continuous blue-glass banner/pause/editing, chef name/photo/quote/publication, 5 viewports, reduced motion, permissions, no browser errors.");
+    console.log("PASS: events/order, automatic animations without pause controls, continuous editable banner, chef publication, 5 viewports, reduced motion, permissions, no browser errors.");
   } finally {
     await db.settings.update({ where: { id: 1 }, data: { content: originalSettings.content as Prisma.InputJsonValue, draftContent: originalSettings.draftContent === null ? Prisma.DbNull : originalSettings.draftContent as Prisma.InputJsonValue } });
     await db.event.deleteMany({ where: { id: { in: ids } } });

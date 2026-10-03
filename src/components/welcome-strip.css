@@ -7,10 +7,6 @@
 .welcome-strip .welcome-glass { width: 28px; height: 28px; flex-shrink: 0; transform-origin: 50% 90%; animation: welcome-toast 3.8s ease-in-out infinite; }
 .welcome-phrase:nth-child(2) .welcome-glass { animation-delay: -.8s; }
 .welcome-phrase:nth-child(3) .welcome-glass { animation-delay: -1.6s; }
-.welcome-play { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; margin-right: 14px; padding: 0; border: 1px solid #01258f30; border-radius: 50%; color: #01258f; background: white; }
-.welcome-play:hover { background: #eef3ff; }
-.welcome-strip .welcome-play svg { width: 16px; height: 16px; }
-.animated-welcome[data-paused="true"] .welcome-track, .animated-welcome[data-paused="true"] .welcome-glass { animation-play-state: paused; }
 @keyframes welcome-flow { to { transform: translateX(-50%); } }
 @keyframes welcome-toast { 0%, 60%, 100% { transform: translateY(0) rotate(0); } 20% { transform: translateY(-3px) rotate(-9deg); } 36% { transform: translateY(-3px) rotate(7deg); } }
 @media (max-width: 760px) {
@@ -19,13 +15,12 @@
   .welcome-phrase { gap: 14px; }
   .welcome-phrase span { font-size: 19px; }
   .welcome-strip .welcome-glass { width: 24px; height: 24px; }
-  .welcome-play { margin-right: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .welcome-window { mask-image: none; }
   .welcome-track { width: 100%; animation: none; }
   .welcome-group { min-width: 0; width: 100%; flex-wrap: wrap; gap: 12px 28px; padding-inline: 20px; }
-  .welcome-group[aria-hidden="true"], .welcome-play { display: none; }
+  .welcome-group[aria-hidden="true"] { display: none; }
   .welcome-phrase { min-width: 0; max-width: 100%; white-space: normal; }
   .welcome-phrase span { overflow-wrap: anywhere; }
   .welcome-strip .welcome-glass { animation: none; }

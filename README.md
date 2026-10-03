@@ -55,7 +55,7 @@ L'origine doit correspondre exactement a celle du navigateur (localhost ou 127.0
 
 - Entree photographique visible dans le HTML initial avant l'hydratation, image prechargee puis apparition du nom et sortie en rideau apres environ 2,8 secondes. Passer ou Echap donnent un acces immediat ; aucune entree bloquante sans JavaScript ou en mode mouvements reduits.
 - Typographie Bodoni Moda / DM Sans, boutons arrondis, survols discrets, parallaxe legere et compositions editoriales adaptees au mobile.
-- Scene photographique L'heure bleue : trois ambiances du bar, rideau bleu, mouvement lent, onglets au clavier et pause. Arret hors ecran, au survol/focus et en arriere-plan ; pas de lecture automatique en mouvements reduits. Photos issues de la carte Au bar et des contenus du site.
+- Scene photographique L'heure bleue : un a trois evenements, rideau bleu, mouvement lent et onglets au clavier. Arret automatique hors ecran, au survol/focus et en arriere-plan ; pas de lecture automatique en mouvements reduits. Photos issues des evenements, sans bouton de pause.
 - Menu La maison et selecteur de convives Radix UI accessibles au clavier. Aucun lien personnel sur la vitrine ; connexion obligatoire pour le dashboard.
 - Calendrier de reservation francais React DayPicker dans un panneau Radix, avec dates passees et dates au-dela de la limite desactivees.
 - Carte filtree par categorie, galerie plein ecran, evenements publies et informations legales.
@@ -113,7 +113,7 @@ dashboard **Evenements**. Les brouillons et evenements passes ne s'affichent pas
 sans evenement admissible, l'espace est masque. Un seul evenement n'affiche pas d'onglets.
 Le rideau bleu, le mouvement photographique et le defilement de 6,5 secondes sont conserves,
 sans 3D. La lecture s'arrete hors ecran, au survol, au focus, dans un onglet masque et avec
-les mouvements reduits. Un evenement unique garde le mouvement photo et le bouton pause.
+les mouvements reduits. Un evenement unique garde le mouvement photo, sans bouton de pause.
 L'ancien bloc evenements separe est supprime.
 
 La **presentation de la cheffe** vient ensuite, puis la carte. Dans **Contenus du site**,
@@ -131,13 +131,16 @@ uniquement l'ancienne photo et les textes de demonstration encore presents.
 
 Le bandeau avant **L'heure bleue** fait defiler les trois phrases en continu avec des
 verres bleus animes. Les champs **Bandeau : phrase 1/2/3** dans **Contenus du site**
-acceptent jusqu'a 160 caracteres chacun. Le bouton pause arrete texte et icones ;
+acceptent jusqu'a 160 caracteres chacun. Aucun bouton de pause n'est affiche ;
 les mouvements reduits affichent les trois phrases sans animation ni copie supplementaire.
 
-Trois fiches **Oussamabk** sont ajoutees en **brouillon** avec des photos generiques
-d'evenements. Les dates a +14/+21/+28 jours et 21:30 sont indicatives, pas des annonces
-confirmees : valider la programmation avec l'artiste avant de publier. Aucune photo
-d'Oussamabk ou issue d'Instagram n'est conservee. Les trois images et la photo de la
+Trois **evenements d'exemple** sont publies aux positions 0, 1 et 2 avec des photos
+generiques. Leur titre et description indiquent leur caractere fictif. Les dates
+a +14/+21/+28 jours et 21:30 sont indicatives, pas des annonces confirmees.
+La migration `20261003190000_publish_event_examples` publie les trois fiches existantes
+et place l'ancien Blue Sessions en position 3, sans le supprimer. Les identifiants
+historiques des fiches sont conserves. Aucune photo d'Oussamabk ou issue d'Instagram
+n'est conservee. Les trois images et la photo de la
 cheffe sont aussi disponibles dans la mediatheque, hors galerie publique. Les seeds
 suivants ne remplacent pas les modifications de ces fiches.
 
@@ -202,14 +205,14 @@ liens et les ancres ne la rejouent pas. Le logo du dashboard reste dans le dashb
 Le mode mouvements reduits conserve un acces immediat, meme au clic-logo.
 
 `test:experience` verifie le logo de connexion, les evenements de L'heure bleue en cinq formats,
-la lecture automatique, la pause, le clavier, le chargement des images, l'absence de
+la lecture et la reprise automatiques, le clavier, le chargement des images, l'absence de
 chevauchement et le mode mouvements reduits. Il ne modifie pas la base.
 
 `test:events` cible les cas 0/1/2/3+ evenements, le tri MySQL, le filtre publie/a venir,
 l'ordre enregistre depuis le dashboard, les autorisations, les onglets, les details,
 les textes longs, cinq formats, les mouvements reduits et l'edition de la cheffe
 (nom, petit mot, brouillon, apercu, publication, photo), ainsi que la boucle continue
-du bandeau, sa pause, ses icones et ses trois phrases editables. Il refuse une base distante
+du bandeau, l'absence de boutons pause, ses icones et ses trois phrases editables. Il refuse une base distante
 ou la production, masque temporairement les evenements existants, puis restaure leur
 publication et les contenus, puis supprime ses donnees temporaires. Executer sans autre
 test modifiant la base.

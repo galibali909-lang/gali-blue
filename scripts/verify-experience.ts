@@ -29,9 +29,12 @@ async function main() {
     const tabs = page.locator(".bar-tabs [role=tab]");
     const count = await tabs.count();
     if (count > 1) await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
-    await page.getByRole("button", { name: "Mettre l'animation en pause" }).click();
+    await expect(page.locator(".bar-play, .welcome-play")).toHaveCount(0);
+    await page.locator(".bar-moment").hover();
+    await expect(bar).toHaveAttribute("data-playing", "false");
     await page.mouse.move(0, 0);
-    await page.locator(".bar-play").blur();
+    await expect(bar).toHaveAttribute("data-playing", "true");
+    await page.locator(".bar-details").focus();
     await expect(bar).toHaveAttribute("data-playing", "false");
     if (count > 1) {
       await tabs.first().focus();
@@ -65,9 +68,11 @@ async function main() {
       }
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.getByRole("button", { name: "Relancer l'animation" }).click();
-    await page.locator(".bar-play").blur();
+    await page.locator(".bar-details").focus();
+    await page.locator(".bar-details").blur();
+    await bar.scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
+    await expect(bar).toHaveAttribute("data-playing", "true");
     await page.locator(".site-nav").scrollIntoViewIfNeeded();
     await expect(bar).toHaveAttribute("data-playing", "false");
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -83,7 +88,7 @@ async function main() {
     await expect(page).toHaveURL(`${origin}/`);
     await expect(page.locator(".entry-dialog[open]")).toHaveCount(0);
     expect(errors).toEqual([]);
-    console.log("PASS: logo connexion, lien L'heure bleue, evenements en 5 formats, pause/clavier, images chargees, aucun chevauchement, arret hors ecran et mouvements reduits.");
+    console.log("PASS: logo connexion, evenements en 5 formats, aucun bouton pause, reprise automatique apres interaction, clavier, images chargees, mouvements reduits.");
   } finally { await context.close(); await browser.close(); }
 }
 
