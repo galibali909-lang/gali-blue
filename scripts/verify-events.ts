@@ -37,6 +37,20 @@ async function main() {
     expect(await selectedIds()).toEqual([]);
     await refresh();
     await expect(page.locator(".bar-scene")).toHaveCount(0);
+    const banner = page.locator(".animated-welcome");
+    const track = page.locator(".welcome-track");
+    await banner.scrollIntoViewIfNeeded();
+    await expect(track).toHaveCSS("animation-name", "welcome-flow");
+    await expect(track).toHaveCSS("animation-iteration-count", "infinite");
+    await expect(page.locator(".welcome-group:not([aria-hidden]) .welcome-phrase")).toHaveCount(3);
+    await expect(page.locator(".welcome-glass").first()).toHaveCSS("color", "rgb(1, 37, 143)");
+    const initialTransform = await track.evaluate(element => getComputedStyle(element).transform);
+    await expect.poll(() => track.evaluate(element => getComputedStyle(element).transform)).not.toBe(initialTransform);
+    await page.getByRole("button", { name: "Mettre le bandeau en pause" }).click();
+    await expect(track).toHaveCSS("animation-play-state", "paused");
+    await expect(page.locator(".welcome-glass").first()).toHaveCSS("animation-play-state", "paused");
+    await page.getByRole("button", { name: "Relancer le bandeau" }).click();
+    await expect(track).toHaveCSS("animation-play-state", "running");
     const first = await db.event.create({ data: { id: ids[0], title: "Blue Sessions", description: "Une soiree de musique, de cocktails et de conversations.", date: new Date(Date.now() + 14 * 86400000), published: true, position: 30, image: "/images/cocktail.jpg" } });
     expect(await selectedIds()).toEqual([ids[0]]);
     await refresh();
@@ -76,6 +90,33 @@ async function main() {
     await expect(page.locator(".bar-tabs [role=tab]").first()).toBeFocused();
     for (const viewport of [{ width: 1440, height: 1000 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 740 }, { width: 844, height: 390 }]) {
       await page.setViewportSize(viewport);
+      await banner.scrollIntoViewIfNeeded();
+      for (const phase of [0, .25, .5, .75, .999]) {
+        const visible = await track.evaluate((element, progress) => {
+          const animation = element.getAnimations()[0];
+          animation.currentTime = 38000 * progress;
+          const box = element.parentElement!.getBoundingClientRect();
+          return [...element.querySelectorAll(".welcome-phrase span")].some(phrase => { const bounds = phrase.getBoundingClientRect(); return bounds.right > box.left + 20 && bounds.left < box.right - 20; });
+        }, phase);
+        expect(visible, `Continuous banner ${viewport.width} ${phase}`).toBe(true);
+      }
+      await page.locator(".chef-section").scrollIntoViewIfNeeded();
+      await expect(page.locator(".chef-section .story-image img")).toHaveJSProperty("complete", true);
+      expect(await page.locator(".chef-section .story-image img").evaluate(element => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      expect(await page.locator(".chef-section").evaluate(element => {
+        const copy = element.querySelector(".story-copy")!.getBoundingClientRect();
+        const photo = element.querySelector(".story-visual")!.getBoundingClientRect();
+        return (copy.right <= photo.left || copy.bottom <= photo.top || photo.bottom <= copy.top) && [...element.querySelectorAll("h2, p, cite, a, .image-note")].every(child => child.scrollWidth <= child.clientWidth + 1 && child.getBoundingClientRect().right <= innerWidth + 1);
+      }), `Chef layout ${viewport.width}`).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      if ([320, 390, 1440].includes(viewport.width)) {
+        await page.setViewportSize({ width: viewport.width, height: 1800 });
+        await page.locator(".chef-section").evaluate(element => element.scrollIntoView({ behavior: "instant", block: "start" }));
+        await page.locator(".chef-section").screenshot({ path: path.join(artifacts, `chef-${viewport.width}.png`) });
+        await banner.evaluate(element => element.scrollIntoView({ behavior: "instant", block: "start" }));
+        await banner.screenshot({ path: path.join(artifacts, `welcome-${viewport.width}.png`) });
+        await page.setViewportSize(viewport);
+      }
       for (let index = 0; index < 3; index++) {
         await page.locator(".bar-tabs [role=tab]").nth(index).click();
         await expect(page.locator(".bar-moment-copy")).toHaveCSS("opacity", "1");
@@ -116,6 +157,12 @@ async function main() {
       await page.locator(".bar-tabs [role=tab]").first().click();
     }
     await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(track).toHaveCSS("animation-name", "none");
+    await expect(page.locator(".welcome-group[aria-hidden='true']")).toBeHidden();
+    await expect(page.locator(".welcome-play")).toBeHidden();
+    await page.setViewportSize({ width: 320, height: 740 });
+    await banner.scrollIntoViewIfNeeded();
+    expect(await banner.evaluate(element => [...element.querySelectorAll(".welcome-group:not([aria-hidden]) .welcome-phrase")].every(child => child.getBoundingClientRect().right <= innerWidth && child.scrollWidth <= child.clientWidth + 1))).toBe(true);
     await expect(page.locator(".bar-moment-copy")).toHaveCSS("animation-name", "none");
     await expect(page.locator(".bar-curtain")).not.toBeVisible();
     await expect(page.locator(".bar-photograph img")).toHaveCSS("animation-name", "none");
@@ -141,9 +188,13 @@ async function main() {
     expect(invalid.status()).toBe(400);
     const before = (await publicData()).content;
     await page.goto(`${origin}/dashboard?view=content`, { waitUntil: "networkidle" });
+    await page.getByLabel("Nom de la cheffe", { exact: true }).fill("Salma Test");
+    await page.getByLabel("Bandeau : phrase 1", { exact: true }).fill("Les saveurs se partagent.");
+    await page.getByLabel("Bandeau : phrase 2", { exact: true }).fill("Les belles heures commencent ici.");
+    await page.getByLabel("Bandeau : phrase 3", { exact: true }).fill("Les souvenirs restent.");
     await page.getByLabel("La cheffe : titre", { exact: true }).fill("La cheffe de notre table");
     await page.getByLabel("Presentation de la cheffe", { exact: true }).fill("Une presentation de test pour notre cheffe.");
-    await page.getByLabel("La cheffe : signature", { exact: true }).fill("La cuisine du partage.");
+    await page.getByLabel("Le petit mot de la cheffe", { exact: true }).fill("La cuisine du partage.");
     await page.getByLabel("La cheffe : legende de la photo", { exact: true }).fill("La cheffe en cuisine");
     const photo = (await page.getByRole("combobox", { name: "Photo de la cheffe" }).locator("option").nth(1).getAttribute("value"))!;
     await page.getByRole("combobox", { name: "Photo de la cheffe" }).selectOption(photo);
@@ -151,9 +202,12 @@ async function main() {
     await page.getByRole("button", { name: "Enregistrer le brouillon", exact: true }).click();
     await expect(page.getByRole("button", { name: "Publier le brouillon" })).toBeEnabled();
     expect((await publicData()).content.storyTitle).toBe(before.storyTitle);
+    expect((await publicData()).content.welcomePhrase1).toBe(before.welcomePhrase1);
     await page.goto(`${origin}/?preview=1#esprit`, { waitUntil: "networkidle" });
-    await expect(page.locator(".story-copy h2")).toHaveText("La cheffe de notre table");
-    await expect(page.locator(".story-signature")).toHaveText("La cuisine du partage.");
+    await expect(page.locator(".story-copy h2")).toHaveText("Salma Test");
+    await expect(page.locator(".chef-intro")).toHaveText("La cheffe de notre table");
+    await expect(page.locator(".story-signature p")).toHaveText("La cuisine du partage.");
+    await expect(page.locator(".welcome-group:not([aria-hidden]) .welcome-phrase").first()).toHaveText("Les saveurs se partagent.");
     await expect(page.locator("#bar-title")).toHaveText("Nos bellessoirees.");
     await page.goto(`${origin}/dashboard?view=content`, { waitUntil: "networkidle" });
     const published = page.waitForResponse(response => response.url() === `${origin}/api/admin` && response.request().method() === "POST");
@@ -161,17 +215,20 @@ async function main() {
     expect((await published).ok()).toBe(true);
     await expect(page.locator(".settings-layout .section-toolbar .badge")).toHaveText("Contenu publie");
     await expect(page.getByRole("button", { name: "Publier le brouillon" })).toBeDisabled();
-    expect((await publicData()).content).toMatchObject({ storyTitle: "La cheffe de notre table", storyText: "Une presentation de test pour notre cheffe.", storySignature: "La cuisine du partage.", storyCaption: "La cheffe en cuisine", storyImage: photo, eventTitle: "Nos belles\nsoirees." });
+    expect((await publicData()).content).toMatchObject({ chefName: "Salma Test", welcomePhrase1: "Les saveurs se partagent.", welcomePhrase2: "Les belles heures commencent ici.", welcomePhrase3: "Les souvenirs restent.", storyTitle: "La cheffe de notre table", storyText: "Une presentation de test pour notre cheffe.", storySignature: "La cuisine du partage.", storyCaption: "La cheffe en cuisine", storyImage: photo, eventTitle: "Nos belles\nsoirees." });
+    const invalidPhrase = await context.request.post(`${origin}/api/admin`, { headers: { Origin: origin }, data: { resource: "content", data: { content: { ...before, welcomePhrase1: "Texte".repeat(40) }, publish: false } } });
+    expect(invalidPhrase.status()).toBe(400);
     await db.staff.update({ where: { id: accountId }, data: { role: "SERVICE" } });
     const denied = await context.request.post(`${origin}/api/admin`, { headers: { Origin: origin }, data: { ...payload, data: { ...payload.data, position: 2 } } });
     expect(denied.status()).toBe(403);
     await refresh();
     await expect(page.locator(".bar-moment")).toHaveAttribute("data-event-id", ids[3]);
-    await expect(page.locator(".story-copy h2")).toHaveText("La cheffe de notre table");
+    await expect(page.locator(".story-copy h2")).toHaveText("Salma Test");
+    await expect(page.locator(".chef-intro")).toHaveText("La cheffe de notre table");
     await page.locator(".bar-event-actions .bar-link").click();
     await expect(page).toHaveURL(`${origin}/reserver`);
     expect(errors).toEqual([]);
-    console.log("PASS: 0/1/2/3+ events, dashboard order, original blue-hour animation/autoplay/pause, 5 viewports, chef drafts/preview/publication/photo, permissions, no browser errors.");
+    console.log("PASS: events/order, blue-hour animation, continuous blue-glass banner/pause/editing, chef name/photo/quote/publication, 5 viewports, reduced motion, permissions, no browser errors.");
   } finally {
     await db.settings.update({ where: { id: 1 }, data: { content: originalSettings.content as Prisma.InputJsonValue, draftContent: originalSettings.draftContent === null ? Prisma.DbNull : originalSettings.draftContent as Prisma.InputJsonValue } });
     await db.event.deleteMany({ where: { id: { in: ids } } });

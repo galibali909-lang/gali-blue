@@ -32,6 +32,20 @@ async function seed() {
     date: localDateTime(dateLabel(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"), "21:30"),
     image: "/images/cocktail.jpg", published: true, position: 0,
   } });
-  console.log("Demo content, tables and Blue Sessions event ready. No staff password created by the seed.");
+  await db.media.upsert({ where: { id: "demo-chef-portrait" }, update: {}, create: { id: "demo-chef-portrait", title: "Cheffe - photo d'illustration", url: "/images/chef-demo.jpg", kind: "image", gallery: false, position: 3 } });
+  const eventExamples = [
+    { id: "01", image: "/images/event-live.jpg", title: "Oussamabk - Soiree live" },
+    { id: "02", image: "/images/event-concert.jpg", title: "Oussamabk - Le rendez-vous" },
+    { id: "03", image: "/images/event-music.jpg", title: "Oussamabk - Blue Sessions" },
+  ];
+  for (const [index, event] of eventExamples.entries()) {
+    await db.media.upsert({ where: { id: `demo-event-photo-${event.id}` }, update: {}, create: { id: `demo-event-photo-${event.id}`, title: `Evenement - illustration ${event.id}`, url: event.image, kind: "image", gallery: false, position: 4 + index } });
+    await db.event.upsert({ where: { id: `draft-oussamabk-${event.id}` }, update: {}, create: {
+      id: `draft-oussamabk-${event.id}`, title: event.title, image: event.image, published: false, position: index + 1,
+      date: localDateTime(dateLabel(new Date(Date.now() + (14 + index * 7) * 86400000), "yyyy-MM-dd"), "21:30"),
+      description: "Projet d'evenement avec Oussamabk. Date et horaire indicatifs, programmation a confirmer avec l'artiste avant publication. Photo d'illustration : elle ne represente ni l'artiste ni un evenement annonce par GALI BLUE.",
+    } });
+  }
+  console.log("Demo content ready: chef illustration and three event drafts with example photos. No staff password created by the seed.");
 }
 seed().finally(() => db.$disconnect());

@@ -65,6 +65,20 @@
 .story-image img { transition: transform 1s cubic-bezier(.22,1,.36,1); }
 .story-image:hover img { transform: scale(1.025); }
 .image-note { font-size: 8px; margin-top: 18px; }
+.chef-section { align-items: center; }
+.chef-section .story-copy, .chef-section .story-visual { min-width: 0; }
+.chef-section .story-copy h2 { margin-bottom: 18px; overflow-wrap: anywhere; }
+.chef-section .story-copy .chef-intro { font-family: var(--font-editorial), Georgia, serif; color: var(--blue); font-size: 24px; line-height: 1.4; white-space: pre-line; margin-bottom: 22px; }
+.chef-section .story-copy > p { overflow-wrap: anywhere; }
+.chef-section .chef-note { position: relative; max-width: 100%; margin: 28px 0; padding: 22px 0 0 35px; border-top: 1px solid var(--line); }
+.chef-note > svg { position: absolute; top: 24px; left: 0; }
+.chef-note > p { font-family: var(--font-editorial), Georgia, serif; font-size: 21px; line-height: 1.6; margin: 0; overflow-wrap: anywhere; }
+.chef-note > cite { display: block; font-family: var(--font-sans), sans-serif; font-size: 11px; font-style: normal; margin-top: 15px; overflow-wrap: anywhere; }
+.chef-section .image-note { flex-wrap: wrap; font-size: 10px; line-height: 1.5; }
+.chef-section .image-note > span { overflow-wrap: anywhere; min-width: 0; }
+.chef-section .story-image { aspect-ratio: 4 / 5; }
+.chef-section .story-image img { object-position: 40% center; }
+@media (max-width: 760px) { .chef-section .story-copy .chef-intro { font-size: 22px; } .chef-section .chef-note { padding-left: 30px; } .chef-note > p { font-size: 20px; } .chef-section .story-image { aspect-ratio: 1; } }
 .text-link { gap: 35px; padding: 0 0 12px; font-size: 12px; border-bottom-color: #01258f60; }
 .text-link svg { transition: transform .3s; }
 .text-link:hover svg { transform: translate(2px,-2px); }

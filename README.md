@@ -117,13 +117,35 @@ les mouvements reduits. Un evenement unique garde le mouvement photo et le bouto
 L'ancien bloc evenements separe est supprime.
 
 La **presentation de la cheffe** vient ensuite, puis la carte. Dans **Contenus du site**,
-modifier le surtitre, le titre, la presentation, la signature, la photo et sa legende,
+modifier le nom, le surtitre, le titre, la presentation, le petit mot, la photo et sa legende,
 ainsi que le titre de l'espace evenements. Enregistrer le brouillon, consulter l'apercu,
-puis publier. La photo du lieu reste un emplacement illustratif tant qu'aucun portrait
-n'est fourni. Le texte de presentation est un exemple, sans biographie ni nom inventes.
+puis publier. **Salma Benali** et son petit mot sont un exemple fictif, pas l'identite
+de la personne photographiee ni une biographie reelle. La photo montre une cuisiniere
+au travail et porte une legende d'illustration. Remplacer nom, photo et texte avant
+publication des informations reelles du restaurant.
 La migration `20261003160000_chef_presentation` remplace uniquement les anciens textes
 de demonstration, y compris dans un brouillon, sans ecraser les textes personnalises
 ni modifier les images existantes.
+La migration suivante `20261003170000_chef_identity` ajoute le nom d'exemple et remplace
+uniquement l'ancienne photo et les textes de demonstration encore presents.
+
+Le bandeau avant **L'heure bleue** fait defiler les trois phrases en continu avec des
+verres bleus animes. Les champs **Bandeau : phrase 1/2/3** dans **Contenus du site**
+acceptent jusqu'a 160 caracteres chacun. Le bouton pause arrete texte et icones ;
+les mouvements reduits affichent les trois phrases sans animation ni copie supplementaire.
+
+Trois fiches **Oussamabk** sont ajoutees en **brouillon** avec des photos generiques
+d'evenements. Les dates a +14/+21/+28 jours et 21:30 sont indicatives, pas des annonces
+confirmees : valider la programmation avec l'artiste avant de publier. Aucune photo
+d'Oussamabk ou issue d'Instagram n'est conservee. Les trois images et la photo de la
+cheffe sont aussi disponibles dans la mediatheque, hors galerie publique. Les seeds
+suivants ne remplacent pas les modifications de ces fiches.
+
+Sources des photos d'illustration (Unsplash) :
+- Cheffe : https://images.unsplash.com/photo-1594394206930-67339d922f8e
+- Scene live : https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f
+- Concert : https://images.unsplash.com/photo-1514525253161-7a46d19cd819
+- Microphone : https://images.unsplash.com/photo-1516280440614-37939bbacd81
 
 La migration `20261003145000_event_position` ajoute l'ordre aux evenements existants.
 Le seed ajoute une seule fois **Blue Sessions**, exemple fictif publie, 14 jours apres
@@ -186,7 +208,8 @@ chevauchement et le mode mouvements reduits. Il ne modifie pas la base.
 `test:events` cible les cas 0/1/2/3+ evenements, le tri MySQL, le filtre publie/a venir,
 l'ordre enregistre depuis le dashboard, les autorisations, les onglets, les details,
 les textes longs, cinq formats, les mouvements reduits et l'edition de la cheffe
-(brouillon, apercu, publication, photo). Il refuse une base distante
+(nom, petit mot, brouillon, apercu, publication, photo), ainsi que la boucle continue
+du bandeau, sa pause, ses icones et ses trois phrases editables. Il refuse une base distante
 ou la production, masque temporairement les evenements existants, puis restaure leur
 publication et les contenus, puis supprime ses donnees temporaires. Executer sans autre
 test modifiant la base.

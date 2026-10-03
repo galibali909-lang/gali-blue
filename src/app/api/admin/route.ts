@@ -79,6 +79,8 @@ export async function POST(request: Request) {
         for (const key of ["heroImage", "heroVideo", "storyImage", "logoImage", "logoLightImage"] as const) localMedia.parse(content[key]);
         content.brandName = z.string().trim().min(1).max(80).parse(content.brandName);
         content.brandTagline = z.string().trim().max(120).parse(content.brandTagline);
+        for (const key of ["welcomePhrase1", "welcomePhrase2", "welcomePhrase3"] as const) content[key] = z.string().trim().min(1).max(160).parse(content[key]);
+        content.chefName = z.string().trim().min(1).max(80).parse(content.chefName);
         for (const image of [content.logoImage, content.logoLightImage]) {
           if (image && !/\.(png|jpe?g|webp)$/i.test(image)) throw new HttpError("Le logo doit etre une image JPEG, PNG ou WebP.");
           if (image.startsWith("/api/media/") && !await transaction.media.findFirst({ where: { url: image, kind: "image" } })) throw new HttpError("Logo introuvable dans la mediatheque.");
