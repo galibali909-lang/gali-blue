@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { defaultContent } from "../src/lib/content";
+import { dateLabel, localDateTime } from "../src/lib/domain";
 
 const db = new PrismaClient();
 async function seed() {
@@ -26,6 +27,11 @@ async function seed() {
     { title: "L'instant cocktail", url: "/images/cocktail.jpg", kind: "image", gallery: true, position: 1 },
     { title: "Autour de la table", url: "/images/interior.jpg", kind: "image", gallery: true, position: 2 },
   ] });
-  console.log("Demo content and tables ready. No staff password created by the seed.");
+  await db.event.upsert({ where: { id: "demo-blue-sessions" }, update: {}, create: {
+    id: "demo-blue-sessions", title: "Blue Sessions", description: "Une soiree au rythme de la soul et du jazz, des cocktails signature et des assiettes a partager. Retrouvez-nous au bar pour prolonger la soiree, entre musique et belles conversations.",
+    date: localDateTime(dateLabel(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"), "21:30"),
+    image: "/images/cocktail.jpg", published: true, position: 0,
+  } });
+  console.log("Demo content, tables and Blue Sessions event ready. No staff password created by the seed.");
 }
 seed().finally(() => db.$disconnect());

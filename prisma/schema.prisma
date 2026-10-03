@@ -155,6 +155,7 @@ model Event {
   date        DateTime
   image       String?
   published   Boolean  @default(false)
+  position    Int      @default(0)
 }
 
 model Media {

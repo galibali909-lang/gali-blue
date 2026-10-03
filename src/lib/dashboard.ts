@@ -14,7 +14,7 @@ export async function dashboardData(staff: { id: string; name: string; role: str
     operational ? db.diningTable.findMany({ orderBy: { name: "asc" } }) : [],
     operational ? db.staff.findMany({ select: { id: true, name: true, role: true, job: true, active: true, image: true, ...(management ? { email: true, phone: true, shift: true } : {}) }, orderBy: { name: "asc" } }) : [],
     editorial ? db.menuItem.findMany({ orderBy: { position: "asc" } }) : [],
-    editorial ? db.event.findMany({ orderBy: { date: "asc" } }) : [],
+    editorial ? db.event.findMany({ orderBy: [{ position: "asc" }, { date: "asc" }, { id: "asc" }] }) : [],
     editorial ? db.media.findMany({ orderBy: { position: "asc" } }) : [],
     management ? db.audit.findMany({ orderBy: { createdAt: "desc" }, take: 100 }) : [],
   ]);

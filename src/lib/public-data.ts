@@ -7,7 +7,7 @@ export async function publicData(preview = false) {
   const [settings, menu, events, gallery] = await Promise.all([
     db.settings.findUniqueOrThrow({ where: { id: 1 } }),
     db.menuItem.findMany({ where: { available: true }, orderBy: { position: "asc" } }),
-    db.event.findMany({ where: { published: true, date: { gte: new Date() } }, orderBy: { date: "asc" } }),
+    db.event.findMany({ where: { published: true, date: { gte: new Date() } }, orderBy: [{ position: "asc" }, { date: "asc" }, { id: "asc" }], take: 3 }),
     db.media.findMany({ where: { gallery: true }, orderBy: { position: "asc" } }),
   ]);
   return {

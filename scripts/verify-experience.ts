@@ -26,21 +26,25 @@ async function main() {
     await bar.scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     await expect(bar).toHaveAttribute("data-playing", "true");
-    await expect(page.locator("#bar-tab-table")).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
-    await page.getByRole("button", { name: "Mettre les ambiances en pause" }).click();
+    const tabs = page.locator(".bar-tabs [role=tab]");
+    const count = await tabs.count();
+    if (count > 1) await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
+    await page.getByRole("button", { name: "Mettre l'animation en pause" }).click();
     await page.mouse.move(0, 0);
     await page.locator(".bar-play").blur();
     await expect(bar).toHaveAttribute("data-playing", "false");
-    await page.locator("#bar-tab-table").focus();
-    await page.keyboard.press("ArrowRight");
-    await expect(page.locator("#bar-tab-soiree")).toBeFocused();
-    await expect(page.locator("#bar-tab-soiree")).toHaveAttribute("aria-selected", "true");
-    await page.keyboard.press("Home");
-    await expect(page.locator("#bar-tab-aperitif")).toBeFocused();
+    if (count > 1) {
+      await tabs.first().focus();
+      await page.keyboard.press("ArrowRight");
+      await expect(tabs.nth(1)).toBeFocused();
+      await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+      await page.keyboard.press("Home");
+      await expect(tabs.first()).toBeFocused();
+    }
     for (const viewport of [{ width: 1440, height: 1000 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 740 }, { width: 844, height: 390 }]) {
       await page.setViewportSize(viewport);
-      for (const id of ["aperitif", "table", "soiree"]) {
-        await page.locator(`#bar-tab-${id}`).click();
+      for (let index = 0; index < Math.max(1, count); index++) {
+        if (count) await tabs.nth(index).click();
         await expect(page.locator(".bar-moment-copy")).toHaveCSS("opacity", "1");
         await expect(page.locator(".bar-photograph")).toHaveCSS("opacity", "1");
         await expect(page.locator(".bar-photograph img")).toHaveJSProperty("complete", true);
@@ -53,12 +57,15 @@ async function main() {
           const viewportWidth = document.documentElement.clientWidth;
           return { separate: title.right <= copy.left || title.bottom <= copy.top, controlsBelow: Math.max(title.bottom, copy.bottom) <= controls.top + 1, fits: [...element.querySelectorAll("h2, h3, p, button, a")].every(child => child.scrollWidth <= child.clientWidth + 1 && child.getBoundingClientRect().right <= viewportWidth + 1) };
         });
-        expect(layout, `Bar ${id} ${viewport.width}`).toEqual({ separate: true, controlsBelow: true, fits: true });
-        if (id === "aperitif" && [320, 390, 1440].includes(viewport.width)) await bar.screenshot({ path: path.join(artifacts, `bar-scene-${viewport.width}.png`) });
+        expect(layout, `Event ${index} ${viewport.width}`).toEqual({ separate: true, controlsBelow: true, fits: true });
+        if (index === 0 && [320, 390, 1440].includes(viewport.width)) {
+          await bar.evaluate(element => element.scrollIntoView({ behavior: "instant", block: "start" }));
+          await bar.screenshot({ path: path.join(artifacts, `bar-scene-${viewport.width}.png`) });
+        }
       }
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.getByRole("button", { name: "Relancer les ambiances" }).click();
+    await page.getByRole("button", { name: "Relancer l'animation" }).click();
     await page.locator(".bar-play").blur();
     await page.mouse.move(0, 0);
     await page.locator(".site-nav").scrollIntoViewIfNeeded();
@@ -68,13 +75,15 @@ async function main() {
     await bar.scrollIntoViewIfNeeded();
     await expect(bar).toHaveAttribute("data-playing", "false");
     await expect(page.locator(".bar-photograph img")).toHaveCSS("animation-name", "none");
-    await page.locator("#bar-tab-table").click();
-    await expect(page.locator(".bar-moment h3")).toHaveText("Les conversations.");
+    if (count > 1) {
+      await tabs.nth(1).click();
+      await expect(page.locator(".bar-moment h3")).toHaveText(await tabs.nth(1).locator(".bar-tab-title").innerText());
+    }
     await page.locator(".site-nav .brand").click();
     await expect(page).toHaveURL(`${origin}/`);
     await expect(page.locator(".entry-dialog[open]")).toHaveCount(0);
     expect(errors).toEqual([]);
-    console.log("PASS: logo connexion, lien bar sans intro, lecture automatique, pause/clavier, 3 ambiances x 5 formats, images chargees, aucun chevauchement, arret hors ecran et mouvements reduits.");
+    console.log("PASS: logo connexion, lien L'heure bleue, evenements en 5 formats, pause/clavier, images chargees, aucun chevauchement, arret hors ecran et mouvements reduits.");
   } finally { await context.close(); await browser.close(); }
 }
 

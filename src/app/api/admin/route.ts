@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         else await transaction.staff.create({ data: staffData });
       }
       if (resource === "event") {
-        const { id, date, time, ...data } = z.object({ id: z.string().optional(), title: z.string().min(2).max(150), description: z.string().max(3000), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), time: z.string().regex(/^\d{2}:\d{2}$/), image: localMedia.nullable().optional(), published: z.boolean() }).parse(raw.data);
+        const { id, date, time, ...data } = z.object({ id: z.string().optional(), title: z.string().min(2).max(150), description: z.string().max(3000), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), time: z.string().regex(/^\d{2}:\d{2}$/), image: localMedia.nullable().optional(), published: z.boolean(), position: z.coerce.number().int().min(0).max(10000).optional() }).parse(raw.data);
         const eventData = { ...data, date: localDateTime(date, time) };
         if (id) await transaction.event.update({ where: { id }, data: eventData });
         else await transaction.event.create({ data: eventData });

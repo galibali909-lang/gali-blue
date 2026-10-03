@@ -1,7 +1,7 @@
 export type SiteContent = {
   brandName: string; brandTagline: string; logoImage: string; logoLightImage: string;
   tagline: string; heroTitle: string; heroSubtitle: string; heroImage: string; heroVideo: string;
-  storyEyebrow: string; storyTitle: string; storyText: string; storyImage: string;
+  storyEyebrow: string; storyTitle: string; storyText: string; storyImage: string; storySignature: string; storyCaption: string;
   menuTitle: string; menuText: string; eventTitle: string;
   address: string; phone: string; email: string; hours: string; instagram: string;
   legal: string; privacy: string; bookingTerms: string; galleryTitle: string;
@@ -13,13 +13,15 @@ export const defaultContent: SiteContent = {
   heroSubtitle: "Les belles heures de Casablanca.",
   heroImage: "/images/restaurant.jpg",
   heroVideo: "",
-  storyEyebrow: "UN LIEU, MILLE INSTANTS",
-  storyTitle: "On vient pour la cuisine.\nOn reste pour l'instant.",
-  storyText: "Une table que l'on partage, des saveurs qui voyagent, un dernier verre qui se prolonge. GALI BLUE imagine des moments simples et des soirees qui comptent, au rythme de Casablanca.",
+  storyEyebrow: "LA CHEFFE",
+  storyTitle: "Une cuisine de coeur.\nUne signature singuliere.",
+  storyText: "Derriere chaque assiette, notre cheffe imagine une cuisine genereuse, attentive aux produits et au plaisir de partager. Des premieres inspirations a la derniere touche, elle donne a la table GALI BLUE son caractere et sa sensibilite.",
   storyImage: "/images/interior.jpg",
+  storySignature: "Le plaisir de recevoir, jusque dans l'assiette.",
+  storyCaption: "LE GESTE. LE GOUT. LE PARTAGE.",
   menuTitle: "Le gout des bonnes choses.",
   menuText: "Des assiettes genereuses, des produits choisis et une touche d'inattendu.",
-  eventTitle: "La nuit a son adresse.",
+  eventTitle: "L'heure\nbleue.",
   address: "Casablanca, Maroc",
   phone: "", email: "", hours: "Horaires a confirmer", instagram: "",
   galleryTitle: "Un avant-gout de GALI BLUE.",

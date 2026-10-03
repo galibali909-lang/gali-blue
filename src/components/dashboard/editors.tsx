@@ -43,9 +43,10 @@ export function EventsView({ data, mutate }: Props) {
     { name: "title", label: "Titre", required: true, full: true },
     { name: "date", label: "Date", type: "date", required: true }, { name: "time", label: "Horaire", type: "time", required: true },
     { name: "description", label: "Description", type: "textarea", full: true }, imageField(data),
+    { name: "position", label: "Ordre d'affichage", type: "number", min: 0, max: 10000, step: 1, required: true },
     { name: "published", label: "Publier sur le site", type: "checkbox", full: true },
   ];
-  return <><div className="section-toolbar"><h2>Agenda du restaurant</h2><button className="button blue small" onClick={() => setEditing({ title: "", date: dateLabel(new Date(), "yyyy-MM-dd"), time: "21:30", description: "", published: false })}><Plus size={16}/> Ajouter un evenement</button></div>{data.events.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>EVENEMENT</th><th>DATE</th><th>PUBLICATION</th><th/></tr></thead><tbody>{data.events.map(event => <tr key={event.id}><td><strong>{event.title}</strong></td><td>{dateLabel(event.date)}</td><td><Badge status={event.published ? "active" : "inactive"} label={event.published ? "Publie" : "Brouillon"}/></td><td><button className="icon-button" title="Modifier" aria-label={`Modifier ${event.title}`} onClick={() => setEditing({ ...event, date: dateLabel(event.date, "yyyy-MM-dd"), time: dateLabel(event.date, "HH:mm") })}><Pencil size={15}/></button></td></tr>)}</tbody></table></div> : <p className="empty-state">Aucun evenement pour le moment.</p>}{editing && <Modal title={editing.id ? "Modifier l'evenement" : "Nouvel evenement"} onClose={() => setEditing(null)}><FieldsForm initial={editing} fields={fields} onSave={async values => { await mutate("event", values); setEditing(null); }}/></Modal>}</>;
+  return <><div className="section-toolbar"><h2>Agenda du restaurant</h2><button className="button blue small" onClick={() => setEditing({ title: "", date: dateLabel(new Date(), "yyyy-MM-dd"), time: "21:30", description: "", position: Math.min(10000, Math.max(-1, ...data.events.map(event => event.position)) + 1), published: false })}><Plus size={16}/> Ajouter un evenement</button></div>{data.events.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>ORDRE</th><th>EVENEMENT</th><th>DATE</th><th>PUBLICATION</th><th/></tr></thead><tbody>{data.events.map(event => <tr key={event.id}><td>{event.position}</td><td><strong>{event.title}</strong></td><td>{dateLabel(event.date)}</td><td><Badge status={event.published ? "active" : "inactive"} label={event.published ? "Publie" : "Brouillon"}/></td><td><button className="icon-button" title="Modifier" aria-label={`Modifier ${event.title}`} onClick={() => setEditing({ ...event, date: dateLabel(event.date, "yyyy-MM-dd"), time: dateLabel(event.date, "HH:mm") })}><Pencil size={15}/></button></td></tr>)}</tbody></table></div> : <p className="empty-state">Aucun evenement pour le moment.</p>}{editing && <Modal title={editing.id ? "Modifier l'evenement" : "Nouvel evenement"} onClose={() => setEditing(null)}><FieldsForm initial={editing} fields={fields} onSave={async values => { await mutate("event", values); setEditing(null); }}/></Modal>}</>;
 }
 export function MediaView({ data, mutate, refresh }: Props & { refresh: () => Promise<void> }) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -94,11 +95,13 @@ export function ContentView({ data, mutate }: Props) {
     { name: "heroSubtitle", label: "Accueil : sous-titre", full: true },
     { name: "heroImage", label: "Photo principale", type: "select", options: mediaOptions(data), required: true },
     { name: "heroVideo", label: "Video principale (facultative)", type: "select", options: mediaOptions(data, "video") },
-    { name: "storyEyebrow", label: "Le lieu : surtitre", full: true }, { name: "storyTitle", label: "Le lieu : titre", full: true },
-    { name: "storyText", label: "Presentation du lieu", type: "textarea", full: true },
-    { name: "storyImage", label: "Photo du lieu", type: "select", options: mediaOptions(data), full: true },
+    { name: "storyEyebrow", label: "La cheffe : surtitre", full: true }, { name: "storyTitle", label: "La cheffe : titre", type: "textarea", full: true },
+    { name: "storyText", label: "Presentation de la cheffe", type: "textarea", full: true },
+    { name: "storyImage", label: "Photo de la cheffe", type: "select", options: mediaOptions(data), full: true },
+    { name: "storySignature", label: "La cheffe : signature", full: true },
+    { name: "storyCaption", label: "La cheffe : legende de la photo", full: true },
     { name: "menuTitle", label: "Carte : titre", full: true }, { name: "menuText", label: "Carte : introduction", type: "textarea", full: true },
-    { name: "eventTitle", label: "Evenements : titre", full: true }, { name: "galleryTitle", label: "Galerie : titre", full: true },
+    { name: "eventTitle", label: "Evenements : titre", type: "textarea", full: true }, { name: "galleryTitle", label: "Galerie : titre", full: true },
     { name: "address", label: "Adresse", full: true }, { name: "hours", label: "Horaires affiches", full: true },
     { name: "phone", label: "Telephone" }, { name: "email", label: "Email de contact", type: "email" }, { name: "instagram", label: "Lien Instagram (https://)", full: true },
     { name: "legal", label: "Mentions legales", type: "textarea", full: true }, { name: "privacy", label: "Politique de confidentialite", type: "textarea", full: true },

@@ -105,6 +105,33 @@ Les images initiales proviennent d'Unsplash. Elles illustrent une maquette et ne
 pas GALI BLUE. La carte, les prix et la salle sont des exemples. Remplacer ces contenus,
 les coordonnees et les conditions avant toute publication.
 
+L'espace **L'heure bleue** conserve son animation photographique et se trouve juste apres
+le bandeau des trois phrases sur l'accueil. Il est desormais consacre aux evenements.
+Il affiche les trois premiers evenements publies a venir, tries par **Ordre d'affichage**
+(petit numero en premier), puis date et identifiant. Cet ordre est modifiable dans le
+dashboard **Evenements**. Les brouillons et evenements passes ne s'affichent pas ;
+sans evenement admissible, l'espace est masque. Un seul evenement n'affiche pas d'onglets.
+Le rideau bleu, le mouvement photographique et le defilement de 6,5 secondes sont conserves,
+sans 3D. La lecture s'arrete hors ecran, au survol, au focus, dans un onglet masque et avec
+les mouvements reduits. Un evenement unique garde le mouvement photo et le bouton pause.
+L'ancien bloc evenements separe est supprime.
+
+La **presentation de la cheffe** vient ensuite, puis la carte. Dans **Contenus du site**,
+modifier le surtitre, le titre, la presentation, la signature, la photo et sa legende,
+ainsi que le titre de l'espace evenements. Enregistrer le brouillon, consulter l'apercu,
+puis publier. La photo du lieu reste un emplacement illustratif tant qu'aucun portrait
+n'est fourni. Le texte de presentation est un exemple, sans biographie ni nom inventes.
+La migration `20261003160000_chef_presentation` remplace uniquement les anciens textes
+de demonstration, y compris dans un brouillon, sans ecraser les textes personnalises
+ni modifier les images existantes.
+
+La migration `20261003145000_event_position` ajoute l'ordre aux evenements existants.
+Le seed ajoute une seule fois **Blue Sessions**, exemple fictif publie, 14 jours apres
+sa premiere creation a 21:30 (Casablanca). Il ne remplace ni sa date, ni sa publication,
+ni les modifications du dashboard aux executions suivantes. Remplacer cet exemple
+par un evenement reel avant ouverture au public. Le demarrage Railway applique la
+migration et le seed automatiquement.
+
 Les medias importes sont dans storage/uploads, hors du code
 et des deploiements. JPEG/PNG/WebP : 8 Mo ; MP4 : 30 Mo. SVG et HTML refuses.
 La route de lecture prend en charge les plages d'octets pour les videos.
@@ -126,6 +153,7 @@ npm.cmd run test:design
 npm.cmd run test:navigation
 npm.cmd run test:responsive
 npm.cmd run test:experience
+npm.cmd run test:events
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -151,9 +179,17 @@ chargement direct de l'accueil sans ancre et lors d'un clic sur un logo public. 
 liens et les ancres ne la rejouent pas. Le logo du dashboard reste dans le dashboard.
 Le mode mouvements reduits conserve un acces immediat, meme au clic-logo.
 
-`test:experience` verifie le logo de connexion, les trois ambiances du bar en cinq formats,
+`test:experience` verifie le logo de connexion, les evenements de L'heure bleue en cinq formats,
 la lecture automatique, la pause, le clavier, le chargement des images, l'absence de
 chevauchement et le mode mouvements reduits. Il ne modifie pas la base.
+
+`test:events` cible les cas 0/1/2/3+ evenements, le tri MySQL, le filtre publie/a venir,
+l'ordre enregistre depuis le dashboard, les autorisations, les onglets, les details,
+les textes longs, cinq formats, les mouvements reduits et l'edition de la cheffe
+(brouillon, apercu, publication, photo). Il refuse une base distante
+ou la production, masque temporairement les evenements existants, puis restaure leur
+publication et les contenus, puis supprime ses donnees temporaires. Executer sans autre
+test modifiant la base.
 
 `test:responsive` parcourt les cinq pages publiques et les dix vues du dashboard en
 320, 390, 768, 844 (paysage), 1024 et 1440 pixels. Il verifie les formulaires, le logo,

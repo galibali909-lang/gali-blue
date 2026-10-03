@@ -3,18 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useInView, useReducedMotion } from "motion/react";
-import { ArrowUpRight, Martini, Pause, Play } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Pause, Play, X } from "lucide-react";
+import type { PublicData } from "@/lib/public-data";
+import { dateLabel } from "@/lib/domain";
 import { SiteLink } from "./site-navigation";
 import "./bar-scene.css";
 
-const moments = [
-  { id: "aperitif", label: "L'ap\u00e9ritif", title: "Le premier verre.", note: "Et le temps qui ralentit.", alt: "Un cocktail servi au bar", action: "La carte du bar", href: "/la-carte" },
-  { id: "table", label: "\u00c0 table", title: "Les conversations.", note: "Celles qu'on prolonge autour d'une table.", alt: "Une table dressee dans le restaurant", action: "Prendre une table", href: "/reserver" },
-  { id: "soiree", label: "La soir\u00e9e", title: "Encore un instant.", note: "La nuit peut bien attendre.", alt: "La salle et le bar du restaurant", action: "Nous retrouver", href: "/#contact" },
-] as const;
-
-export function BarScene({ images }: { images: [string, string, string] }) {
+export function BarScene({ events, title }: { events: PublicData["events"]; title: string }) {
   const section = useRef<HTMLElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const inView = useInView(section, { amount: 0.35 });
   const reduced = useReducedMotion();
@@ -24,7 +21,8 @@ export function BarScene({ images }: { images: [string, string, string] }) {
   const [focused, setFocused] = useState(false);
   const [visible, setVisible] = useState(true);
   const playing = inView && !paused && !hovered && !focused && !reduced && visible;
-  const moment = moments[active];
+  const selected = events[active] ? active : 0;
+  const event = events[selected];
 
   useEffect(() => {
     const update = () => setVisible(!document.hidden);
@@ -34,33 +32,38 @@ export function BarScene({ images }: { images: [string, string, string] }) {
   }, []);
 
   useEffect(() => {
-    if (!playing) return;
-    const timer = window.setTimeout(() => setActive(current => (current + 1) % moments.length), 6500);
+    if (!playing || events.length < 2) return;
+    const timer = window.setTimeout(() => setActive(current => (current + 1) % events.length), 6500);
     return () => window.clearTimeout(timer);
-  }, [playing, active]);
+  }, [playing, active, events.length]);
 
   function choose(index: number) {
     setActive(index);
     setPaused(true);
   }
 
+  if (!event) return null;
   return <section ref={section} id="bar" className="bar-scene" aria-labelledby="bar-title" data-playing={playing} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
-    <div className="bar-photograph" key={moment.id}>
-      <Image src={images[active]} alt={moment.alt} fill sizes="100vw" loading="eager"/>
+    <div className="bar-photograph" key={event.id}>
+      <Image src={event.image || "/images/restaurant.jpg"} alt={event.title} fill sizes="100vw" loading="eager"/>
       <div className="bar-curtain" aria-hidden="true"/>
     </div>
     <div className="bar-shade" aria-hidden="true"/>
-    <header className="bar-topline"><span><Martini size={18}/> LE BAR & LES BELLES HEURES</span><span className="bar-edition">CASABLANCA, APR&Egrave;S LE JOUR</span></header>
+    <header className="bar-topline"><span><CalendarDays size={18}/> LES EVENEMENTS GALI BLUE</span><span className="bar-edition">CASABLANCA, APR&Egrave;S LE JOUR</span></header>
     <div className="bar-composition">
-      <div className="bar-heading"><span className="bar-overline">Le rendez-vous</span><h2 id="bar-title">L&apos;heure<br/><em>bleue.</em></h2></div>
-      <div className="bar-moment" role="tabpanel" id="bar-panel" aria-labelledby={`bar-tab-${moment.id}`} aria-live={paused ? "polite" : "off"}>
-        <div className="bar-moment-copy" key={moment.id}><span className="bar-number" aria-hidden="true">0{active + 1}<span>/ 03</span></span><h3>{moment.title}</h3><p>{moment.note}</p><SiteLink href={moment.href} className="bar-link">{moment.action}<ArrowUpRight size={19}/></SiteLink></div>
+      <div className="bar-heading"><span className="bar-overline">Le rendez-vous</span><h2 id="bar-title" data-long={title.length > 30}>{title.split("\n").map((line, index) => index === 0 ? <span key={index}>{line}</span> : <em key={index}>{line}</em>)}</h2></div>
+      <div className="bar-moment" role={events.length > 1 ? "tabpanel" : undefined} id="bar-panel" aria-labelledby={events.length > 1 ? `bar-tab-${event.id}` : "bar-event-title"} aria-live={paused ? "polite" : "off"} data-event-id={event.id}>
+        <div className="bar-moment-copy" key={event.id}><span className="bar-number" aria-hidden="true">0{selected + 1}<span>/ 0{events.length}</span></span><time className="bar-event-date" dateTime={event.date}>{dateLabel(event.date)}</time><h3 id="bar-event-title">{event.title}</h3><p>{event.description}</p><div className="bar-event-actions"><SiteLink href="/reserver" className="bar-link">Reserver une table<ArrowUpRight size={19}/></SiteLink><button type="button" className="bar-details" onClick={() => { setPaused(true); dialog.current?.showModal(); }} aria-haspopup="dialog">Voir l&apos;evenement<ArrowUpRight size={16}/></button></div></div>
       </div>
     </div>
-    <div className="bar-controls"><div className="bar-tabs" role="tablist" aria-label="Les instants du bar">{moments.map((item, index) => <button ref={element => { tabs.current[index] = element; }} key={item.id} id={`bar-tab-${item.id}`} role="tab" aria-controls="bar-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => choose(index)} onKeyDown={event => {
-      const next = event.key === "ArrowRight" ? (index + 1) % moments.length : event.key === "ArrowLeft" ? (index + moments.length - 1) % moments.length : event.key === "Home" ? 0 : event.key === "End" ? moments.length - 1 : null;
+    <div className="bar-controls">{events.length > 1 ? <div className="bar-tabs" role="tablist" aria-label="Evenements a venir">{events.map((item, index) => <button ref={element => { tabs.current[index] = element; }} key={item.id} id={`bar-tab-${item.id}`} role="tab" aria-controls="bar-panel" aria-selected={selected === index} tabIndex={selected === index ? 0 : -1} title={item.title} onClick={() => choose(index)} onKeyDown={event => {
+      const next = event.key === "ArrowRight" ? (index + 1) % events.length : event.key === "ArrowLeft" ? (index + events.length - 1) % events.length : event.key === "Home" ? 0 : event.key === "End" ? events.length - 1 : null;
       if (next === null) return;
       event.preventDefault(); choose(next); tabs.current[next]?.focus();
-    }}><span className="bar-tab-number">0{index + 1}</span><span>{item.label}</span><span className="bar-tab-track" aria-hidden="true">{active === index && <span key={`${active}-${playing}`} className={playing ? "running" : ""}/>}</span></button>)}</div><button className="bar-play" title={paused ? "Relancer les ambiances" : "Mettre les ambiances en pause"} aria-label={paused ? "Relancer les ambiances" : "Mettre les ambiances en pause"} onClick={() => setPaused(!paused)}>{paused ? <Play size={17}/> : <Pause size={17}/>}</button></div>
+    }}><span className="bar-tab-number">0{index + 1}</span><span className="bar-tab-title">{item.title}</span><span className="bar-tab-track" aria-hidden="true">{selected === index && <span key={`${selected}-${playing}`} className={playing ? "running" : ""}/>}</span></button>)}</div> : <div className="bar-single"/>}<button className="bar-play" title={paused ? "Relancer l'animation" : "Mettre l'animation en pause"} aria-label={paused ? "Relancer l'animation" : "Mettre l'animation en pause"} onClick={() => setPaused(!paused)}>{paused ? <Play size={17}/> : <Pause size={17}/>}</button></div>
+    <dialog ref={dialog} className="bar-event-dialog" aria-labelledby="bar-dialog-title" onClick={click => { if (click.target === click.currentTarget) dialog.current?.close(); }}>
+      <div className="bar-dialog-header"><p className="eyebrow">LE RENDEZ-VOUS</p><button type="button" className="icon-button" title="Fermer" aria-label="Fermer l'evenement" onClick={() => dialog.current?.close()}><X size={20}/></button></div>
+      <h2 id="bar-dialog-title">{event.title}</h2><time dateTime={event.date}>{dateLabel(event.date)}</time><p className="bar-dialog-description">{event.description}</p><SiteLink href="/reserver" className="button blue" onClick={() => dialog.current?.close()}>Reserver une table <ArrowUpRight size={18}/></SiteLink>
+    </dialog>
   </section>;
 }

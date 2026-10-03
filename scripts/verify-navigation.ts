@@ -54,7 +54,7 @@ async function main() {
     await page.locator("#instants").scrollIntoViewIfNeeded();
     await logo();
     await top();
-    await page.getByRole("link", { name: "Decouvrir le restaurant" }).click();
+    await page.getByRole("link", { name: "Decouvrir la cheffe" }).click();
     await sectionVisible("esprit");
     await page.getByRole("link", { name: "Prenez place" }).click();
     await expect(page).toHaveURL(`${origin}/reserver`);
@@ -102,7 +102,7 @@ async function main() {
     await page.getByRole("button", { name: "Ouvrir le menu" }).click();
     await logo();
     await expect(page.getByRole("navigation", { name: "Navigation principale" })).toBeHidden();
-    for (const section of [{ title: "L'esprit Gali", id: "esprit" }, { title: "Les instants", id: "instants" }, { title: "Nous trouver", id: "contact" }]) {
+    for (const section of [{ title: "La cheffe", id: "esprit" }, { title: "Les instants", id: "instants" }, { title: "Nous trouver", id: "contact" }]) {
       await page.getByRole("button", { name: "Ouvrir le menu" }).click();
       await page.getByRole("button", { name: "La maison" }).click();
       await page.getByRole("menuitem", { name: new RegExp(section.title) }).click();
