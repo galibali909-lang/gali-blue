@@ -21,6 +21,7 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/src/lib/content.ts ./src/lib/content.ts
+COPY --from=build --chown=node:node /app/src/lib/domain.ts ./src/lib/domain.ts
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/deployment/bootstrap-admin.json ./deployment/bootstrap-admin.json
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json /app/next.config.ts /app/tsconfig.json ./
