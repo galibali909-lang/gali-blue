@@ -35,5 +35,13 @@ export const defaultContent: SiteContent = {
   bookingTerms: "Le paiement au restaurant donne lieu a un appel de notre equipe. Votre table est reservee provisoirement apres cet appel. Les demandes non validees ne garantissent pas de disponibilite.",
 };
 export function parseContent(value: unknown): SiteContent {
-  return { ...defaultContent, ...(value && typeof value === "object" && !Array.isArray(value) ? value : {}) } as SiteContent;
+  const content = { ...defaultContent, ...(value && typeof value === "object" && !Array.isArray(value) ? value : {}) } as SiteContent;
+  for (const key of Object.keys(defaultContent) as (keyof SiteContent)[]) {
+    const text = content[key];
+    if (typeof text !== "string" || !/^base64:type15:[A-Za-z0-9+/]+={0,2}$/.test(text)) continue;
+    try {
+      content[key] = new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(atob(text.slice("base64:type15:".length)), character => character.charCodeAt(0)));
+    } catch { content[key] = defaultContent[key]; }
+  }
+  return content;
 }

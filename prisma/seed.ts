@@ -8,10 +8,10 @@ async function seed() {
     id: 1, serviceTimes: ["12:00", "14:30", "19:00", "21:30"], closedDates: [], content: defaultContent,
   } });
   if (await db.diningTable.count() === 0) await db.diningTable.createMany({ data: [
-    { name: "T01", area: "Salle", seats: 2, joinGroup: "A" }, { name: "T02", area: "Salle", seats: 2, joinGroup: "A" },
-    { name: "T03", area: "Salle", seats: 4 }, { name: "T04", area: "Salle", seats: 4 },
-    { name: "T05", area: "Terrasse", seats: 4, joinGroup: "B" }, { name: "T06", area: "Terrasse", seats: 4, joinGroup: "B" },
-    { name: "T07", area: "Terrasse", seats: 6 }, { name: "T08", area: "Bar", seats: 2 },
+    { name: "T01", area: "Salle", seats: 2, joinGroup: "A", planX: 21.8, planY: 19.4 }, { name: "T02", area: "Salle", seats: 2, joinGroup: "A", planX: 31.3, planY: 19.4 },
+    { name: "T03", area: "Salle", seats: 4, planX: 23.7, planY: 43.4 }, { name: "T04", area: "Salle", seats: 4, planX: 34, planY: 43.4 },
+    { name: "T05", area: "Terrasse", seats: 4, joinGroup: "B", planX: 84, planY: 39.5 }, { name: "T06", area: "Terrasse", seats: 4, joinGroup: "B", planX: 92.5, planY: 39.5 },
+    { name: "T07", area: "Terrasse", seats: 6, planX: 53.8, planY: 34.4 }, { name: "T08", area: "Bar", seats: 2, planX: 29.4, planY: 31 },
   ] });
   if (await db.menuItem.count() === 0) await db.menuItem.createMany({ data: [
     { name: "Burrata & tomates de saison", category: "A partager", description: "Burrata cremeuse, tomates, basilic frais et huile d'olive.", price: 12000, image: "/images/burrata.jpg", allergens: "Lait", position: 0 },
@@ -33,6 +33,7 @@ async function seed() {
     image: "/images/cocktail.jpg", published: true, position: 3,
   } });
   await db.media.upsert({ where: { id: "demo-chef-portrait" }, update: {}, create: { id: "demo-chef-portrait", title: "Cheffe - photo d'illustration", url: "/images/chef-demo.jpg", kind: "image", gallery: false, position: 3 } });
+  await db.media.upsert({ where: { id: "demo-floor-plan" }, update: {}, create: { id: "demo-floor-plan", title: "Plan de salle - exemple fourni", url: "/images/floor-plan-demo.jpg", kind: "image", gallery: false, position: 7 } });
   const eventExamples = [
     { id: "01", image: "/images/event-live.jpg", title: "Soiree live (exemple)" },
     { id: "02", image: "/images/event-concert.jpg", title: "Concert (exemple)" },

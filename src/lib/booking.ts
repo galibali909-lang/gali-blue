@@ -18,6 +18,7 @@ export const bookingSchema = z.object({
   consent: z.literal(true, { error: "Veuillez accepter les conditions de reservation." }),
   requestKey: z.string().uuid(),
   website: z.string().max(0).optional(),
+  tableId: z.string().min(1).max(191).optional(),
 });
 export async function withBookingLock<Result>(operation: (transaction: Prisma.TransactionClient) => Promise<Result>) {
   return db.$transaction(async transaction => {
@@ -41,6 +42,7 @@ export async function createBooking(raw: unknown, actor = "Client") {
     const existing = await transaction.reservation.findUnique({ where: { requestKey: input.requestKey } });
     if (existing) return { reference: existing.reference, status: existing.status };
     const settings = await transaction.settings.findUniqueOrThrow({ where: { id: 1 } });
+    if (actor === "Client" && (input.tableId ? !settings.floorBookingEnabled : !settings.classicBookingEnabled)) throw new HttpError("Ce parcours de reservation est desactive.", 409);
     if (input.method === "ONLINE" && (!settings.onlineEnabled || !cmiReady)) throw new HttpError("Le paiement en ligne est actuellement indisponible.", 409);
     if (input.guests > settings.maxGuests) throw new HttpError(`Maximum ${settings.maxGuests} personnes par demande.`);
     if (!(settings.serviceTimes as string[]).includes(input.time) || (settings.closedDates as string[]).includes(input.date)) throw new HttpError("Ce service est ferme.", 409);
@@ -48,14 +50,17 @@ export async function createBooking(raw: unknown, actor = "Client") {
     try { startsAt = localDateTime(input.date, input.time); } catch { throw new HttpError("Date invalide."); }
     if (startsAt.getTime() < Date.now() + 15 * 60000 || startsAt.getTime() > Date.now() + 180 * 86400000) throw new HttpError("Choisissez une date future dans les 6 prochains mois.");
     const endsAt = new Date(startsAt.getTime() + (settings.durationMinutes + settings.cleanupMinutes) * 60000);
-    const selected = allocateTables(await freeTables(transaction, startsAt, endsAt), input.guests);
+    const available = await freeTables(transaction, startsAt, endsAt);
+    const selected = input.tableId ? available.filter(table => table.id === input.tableId && table.seats >= input.guests && table.planX !== null && table.planY !== null) : allocateTables(available, input.guests);
+    if (input.tableId && !selected?.length) throw new HttpError("Cette table n'est plus disponible pour ce service ou ce nombre de personnes.", 409);
     if (!selected) throw new HttpError("Aucune table compatible n'est disponible pour ce service.", 409);
     const reservation = await transaction.reservation.create({ data: {
       reference: `GB-${randomBytes(4).toString("hex").toUpperCase()}`,
       requestKey: input.requestKey, name: input.name, phone: input.phone, email: input.email || null,
       guests: input.guests, startsAt, endsAt, method: input.method, note: input.note,
+      requestedTableId: input.tableId || null,
       status: "CALL_PENDING", paymentStatus: "ON_SITE_DUE",
-      audits: { create: { actor, action: "CREATION", detail: "Demande enregistree, paiement sur place, aucune remise." } },
+      audits: { create: { actor, action: "CREATION", detail: `Demande enregistree, paiement sur place, aucune remise.${input.tableId ? ` Table souhaitee : ${available.find(table => table.id === input.tableId)!.name}.` : ""}` } },
     } });
     return { reference: reservation.reference, status: reservation.status };
   });
@@ -85,7 +90,9 @@ export async function updateBooking(raw: unknown, actor: { name: string; role: s
       if (next === "PROVISIONAL") {
         if (reservation.startsAt <= new Date()) throw new HttpError("Le service est deja passe.", 409);
         const available = await freeTables(transaction, reservation.startsAt, reservation.endsAt, reservation.id);
-        const selected = allocateTables(available, reservation.guests);
+        const preferred = reservation.requestedTableId ? available.find(table => table.id === reservation.requestedTableId && table.seats >= reservation.guests) : null;
+        if (reservation.requestedTableId && !preferred) throw new HttpError("La table souhaitee n'est plus disponible. Recontactez le client avant de modifier son placement.", 409);
+        const selected = preferred ? [preferred] : allocateTables(available, reservation.guests);
         if (!selected) throw new HttpError("Plus de table compatible disponible.", 409);
         data.tables = { set: selected.map(table => ({ id: table.id })) };
         data.callStatus = "CONFIRMED";

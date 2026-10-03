@@ -15,6 +15,7 @@
     "test:responsive": "tsx --env-file=.env scripts/verify-responsive.ts",
     "test:experience": "tsx --env-file=.env scripts/verify-experience.ts",
     "test:events": "tsx --env-file=.env scripts/verify-events.ts",
+    "test:floor": "tsx --env-file=.env scripts/verify-floor-booking.ts",
     "check": "node --env-file=.env scripts/check.mjs",
     "db:init": "node --env-file=.env scripts/init-db.mjs",
     "db:deploy": "prisma migrate deploy",

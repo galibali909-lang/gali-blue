@@ -179,6 +179,7 @@ npm.cmd run test:navigation
 npm.cmd run test:responsive
 npm.cmd run test:experience
 npm.cmd run test:events
+npm.cmd run test:floor
 ```
 
 `check` valide Prisma, les regles metier, la concurrence MySQL, ESLint, TypeScript
@@ -216,6 +217,18 @@ du bandeau, l'absence de boutons pause, ses icones et ses trois phrases editable
 ou la production, masque temporairement les evenements existants, puis restaure leur
 publication et les contenus, puis supprime ses donnees temporaires. Executer sans autre
 test modifiant la base.
+
+## Reservation sur plan 2D
+
+Dans **Parametres**, les interrupteurs **Reservation classique** et **Reservation sur plan 2D** sont independants ; au moins un parcours doit rester actif. Le plan est desactive par defaut. Une fois active, il est accessible sur `/salle` et depuis la page de reservation.
+
+Le plan fourni est une demonstration : ses huit marqueurs correspondent aux tables existantes, pas a un inventaire de toutes les tables dessinees. **Image du plan de salle** permet de choisir un autre fichier de la mediatheque. Dans **Salle & tables**, modifier une table permet de placer son marqueur par clic ou par coordonnees en pourcentage.
+
+Les disponibilites sont calculees pour la date, le service et le nombre de convives. Une table libre ouvre un popup puis le formulaire pre-rempli ; une table incompatible ou occupee affiche **Pas disponible**. La table souhaitee est conservee dans le dossier. La demande reste **CALL_PENDING**, ne bloque rien avant l'appel et ne constitue pas une reservation immediate. La validation par l'equipe recontrole et affecte exactement la table souhaitee ; en cas de conflit, elle est refusee, sans changement de table silencieux.
+
+`test:floor` verifie les interrupteurs et le placement dans le dashboard, cinq formats d'ecran, le popup, le formulaire, la table occupee et les parcours desactives. Il refuse une base distante, restaure les reglages et supprime ses donnees temporaires. Executer seul avec le serveur local et Edge.
+
+La migration `20261003200000_repair_json_text` convertit les anciens titres JSON binaires MySQL en texte UTF-8, sans modifier les titres personnalises normaux. La lecture des contenus normalise egalement les marqueurs `base64:type15:` reconnus. `scripts/verify-json-text.ts` teste la migration dans une transaction annulee sur la base locale.
 
 `test:responsive` parcourt les cinq pages publiques et les dix vues du dashboard en
 320, 390, 768, 844 (paysage), 1024 et 1440 pixels. Il verifie les formulaires, le logo,

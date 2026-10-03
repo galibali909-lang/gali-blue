@@ -9,7 +9,8 @@ import { defaultContent } from "@/lib/content";
 import { localDateTime } from "@/lib/domain";
 
 const localMedia = z.string().max(300).refine(value => !value || /^\/(images\/[a-zA-Z0-9_.-]+|api\/media\/[a-zA-Z0-9_.-]+)$/.test(value), "Selectionnez un fichier de la mediatheque.");
-const tableSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(30), area: z.string().trim().min(1).max(50), seats: z.coerce.number().int().min(1).max(40), joinGroup: z.string().max(30).nullable().optional(), active: z.boolean() });
+const coordinate = z.preprocess(value => value === "" || value === null ? null : value, z.coerce.number().min(0).max(100).nullable().optional());
+const tableSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(30), area: z.string().trim().min(1).max(50), seats: z.coerce.number().int().min(1).max(40), joinGroup: z.string().max(30).nullable().optional(), active: z.boolean(), planX: coordinate, planY: coordinate });
 const menuSchema = z.object({ id: z.string().optional(), name: z.string().trim().min(1).max(100), description: z.string().max(2000), category: z.string().min(1).max(50), price: z.coerce.number().int().min(0).max(10000000), image: localMedia.nullable().optional(), allergens: z.string().max(300).nullable().optional(), available: z.boolean(), position: z.coerce.number().int().min(0).max(10000) });
 const staffSchema = z.object({ id: z.string().optional(), name: z.string().min(2).max(100), email: z.union([z.email(), z.literal("")]).optional(), phone: z.string().max(30).nullable().optional(), job: z.string().min(1).max(100), role: z.enum(["ADMIN", "MANAGER", "HOST", "SERVICE", "CASHIER", "EDITOR"]), password: z.string().max(72).optional(), image: localMedia.nullable().optional(), shift: z.string().max(200).nullable().optional(), active: z.boolean() });
 const settingsSchema = z.object({ onlineEnabled: z.boolean(), discountEnabled: z.boolean(), discountPercent: z.coerce.number().int().min(0).max(100), onlineAmount: z.coerce.number().int().min(0).max(10000000), maxGuests: z.coerce.number().int().min(1).max(40), durationMinutes: z.coerce.number().int().min(30).max(360), cleanupMinutes: z.coerce.number().int().min(0).max(120), holdMinutes: z.coerce.number().int().min(5).max(60), graceMinutes: z.coerce.number().int().min(0).max(120), serviceTimes: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).min(1).max(24), closedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(365) });
@@ -69,8 +70,16 @@ export async function POST(request: Request) {
       }
       if (resource === "settings") {
         const data = settingsSchema.parse(raw.data);
+        const current = await transaction.settings.findUniqueOrThrow({ where: { id: 1 } });
+        const modes = z.object({ classicBookingEnabled: z.boolean().optional(), floorBookingEnabled: z.boolean().optional(), floorPlanImage: localMedia.optional() }).parse(raw.data);
+        const classicBookingEnabled = modes.classicBookingEnabled ?? current.classicBookingEnabled;
+        const floorBookingEnabled = modes.floorBookingEnabled ?? current.floorBookingEnabled;
+        const floorPlanImage = modes.floorPlanImage ?? current.floorPlanImage;
+        if (!classicBookingEnabled && !floorBookingEnabled) throw new HttpError("Conservez au moins un parcours de reservation actif.");
+        if (floorBookingEnabled && (!/\.(png|jpe?g|webp)$/i.test(floorPlanImage) || !await transaction.diningTable.count({ where: { active: true, planX: { not: null }, planY: { not: null } } }))) throw new HttpError("Choisissez une image de plan et positionnez au moins une table active.");
+        if (floorPlanImage.startsWith("/api/media/") && !await transaction.media.findFirst({ where: { url: floorPlanImage, kind: "image" } })) throw new HttpError("Plan introuvable dans la mediatheque.");
         if (data.onlineEnabled && !cmiReady) throw new HttpError("CMI non configure. L'activation sera disponible apres integration et tests du contrat marchand.", 409);
-        await transaction.settings.update({ where: { id: 1 }, data: { ...data, serviceTimes: [...new Set(data.serviceTimes)].sort(), closedDates: [...new Set(data.closedDates)] } });
+        await transaction.settings.update({ where: { id: 1 }, data: { ...data, classicBookingEnabled, floorBookingEnabled, floorPlanImage, serviceTimes: [...new Set(data.serviceTimes)].sort(), closedDates: [...new Set(data.closedDates)] } });
       }
       if (resource === "content") {
         const fields = z.record(z.string(), z.string().max(6000)).parse(raw.data.content);

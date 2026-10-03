@@ -52,6 +52,9 @@ enum PaymentMethod {
 model Settings {
   id               Int      @id @default(1)
   onlineEnabled    Boolean  @default(false)
+  classicBookingEnabled Boolean @default(true)
+  floorBookingEnabled Boolean @default(false)
+  floorPlanImage String @default("/images/floor-plan-demo.jpg")
   discountEnabled  Boolean  @default(false)
   discountPercent  Int      @default(0)
   onlineAmount     Int      @default(0)
@@ -74,6 +77,9 @@ model DiningTable {
   seats      Int
   joinGroup  String?
   active     Boolean       @default(true)
+  planX      Float?
+  planY      Float?
+  requestedBookings Reservation[] @relation("RequestedTable")
   bookings   Reservation[]
   updatedAt  DateTime      @updatedAt
 }
@@ -101,6 +107,8 @@ model Reservation {
   assignedStaffId  String?
   assignedStaff    Staff?        @relation(fields: [assignedStaffId], references: [id])
   tables           DiningTable[]
+  requestedTableId  String?
+  requestedTable    DiningTable? @relation("RequestedTable", fields: [requestedTableId], references: [id], onDelete: SetNull)
   payments         Payment[]
   audits           Audit[]
   createdAt        DateTime      @default(now())

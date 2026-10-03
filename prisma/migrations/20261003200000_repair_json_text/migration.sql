@@ -1,0 +1,8 @@
+UPDATE `Settings` SET `content` = JSON_SET(`content`, '$.eventTitle', CONVERT(FROM_BASE64(SUBSTRING_INDEX(JSON_UNQUOTE(CAST(JSON_EXTRACT(`content`, '$.eventTitle') AS CHAR CHARACTER SET utf8mb4)), ':', -1)) USING utf8mb4))
+WHERE JSON_UNQUOTE(CAST(JSON_EXTRACT(`content`, '$.eventTitle') AS CHAR CHARACTER SET utf8mb4)) LIKE 'base64:type15:%';
+UPDATE `Settings` SET `content` = JSON_SET(`content`, '$.storyTitle', CONVERT(FROM_BASE64(SUBSTRING_INDEX(JSON_UNQUOTE(CAST(JSON_EXTRACT(`content`, '$.storyTitle') AS CHAR CHARACTER SET utf8mb4)), ':', -1)) USING utf8mb4))
+WHERE JSON_UNQUOTE(CAST(JSON_EXTRACT(`content`, '$.storyTitle') AS CHAR CHARACTER SET utf8mb4)) LIKE 'base64:type15:%';
+UPDATE `Settings` SET `draftContent` = JSON_SET(`draftContent`, '$.eventTitle', CONVERT(FROM_BASE64(SUBSTRING_INDEX(JSON_UNQUOTE(CAST(JSON_EXTRACT(`draftContent`, '$.eventTitle') AS CHAR CHARACTER SET utf8mb4)), ':', -1)) USING utf8mb4))
+WHERE JSON_UNQUOTE(CAST(JSON_EXTRACT(`draftContent`, '$.eventTitle') AS CHAR CHARACTER SET utf8mb4)) LIKE 'base64:type15:%';
+UPDATE `Settings` SET `draftContent` = JSON_SET(`draftContent`, '$.storyTitle', CONVERT(FROM_BASE64(SUBSTRING_INDEX(JSON_UNQUOTE(CAST(JSON_EXTRACT(`draftContent`, '$.storyTitle') AS CHAR CHARACTER SET utf8mb4)), ':', -1)) USING utf8mb4))
+WHERE JSON_UNQUOTE(CAST(JSON_EXTRACT(`draftContent`, '$.storyTitle') AS CHAR CHARACTER SET utf8mb4)) LIKE 'base64:type15:%';

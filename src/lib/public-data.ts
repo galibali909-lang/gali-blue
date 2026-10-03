@@ -14,6 +14,7 @@ export async function publicData(preview = false) {
     content: parseContent(preview && settings.draftContent ? settings.draftContent : settings.content),
     menu, gallery, events: events.map(event => ({ ...event, date: event.date.toISOString() })),
     booking: { maxGuests: settings.maxGuests, onlineEnabled: settings.onlineEnabled && cmiReady, discountEnabled: settings.discountEnabled, discountPercent: settings.discountPercent, onlineAmount: settings.onlineAmount,
+      classicBookingEnabled: settings.classicBookingEnabled, floorBookingEnabled: settings.floorBookingEnabled, floorPlanImage: settings.floorPlanImage,
       today: dateLabel(new Date(), "yyyy-MM-dd"), tomorrow: dateLabel(new Date(Date.now() + 86400000), "yyyy-MM-dd"), lastDate: dateLabel(new Date(Date.now() + 180 * 86400000), "yyyy-MM-dd"),
     },
   };

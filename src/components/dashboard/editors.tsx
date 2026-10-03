@@ -69,6 +69,9 @@ export function MediaView({ data, mutate, refresh }: Props & { refresh: () => Pr
 export function SettingsView({ data, mutate }: Props) {
   const settings = data.settings;
   const fields: Field[] = [
+    { name: "classicBookingEnabled", label: "Reservation classique", type: "checkbox", full: true },
+    { name: "floorBookingEnabled", label: "Reservation sur plan 2D", type: "checkbox", full: true },
+    { name: "floorPlanImage", label: "Image du plan de salle", type: "select", options: mediaOptions(data), full: true },
     { name: "onlineEnabled", label: "Paiement en ligne via CMI", type: "checkbox", full: true, disabled: !data.cmiReady, hint: data.cmiReady ? "Autoriser les nouvelles transactions sur le site." : "Desactive : integration du contrat marchand CMI requise." },
     { name: "discountEnabled", label: "Reduction sur le paiement en ligne", type: "checkbox", full: true, hint: "Aucune reduction pour les paiements au restaurant." },
     { name: "discountPercent", label: "Reduction (%)", type: "number", min: 0, max: 100 },

@@ -10,11 +10,12 @@ import { BookingDatePicker } from "./booking-date-picker";
 import type { SiteContent } from "@/lib/content";
 import { BrandMark } from "./brand-mark";
 
-export function ReservationForm({ settings, terms, content }: { settings: PublicData["booking"]; terms: string; content: SiteContent }) {
+type InitialSelection = { tableId: string; tableName: string; date: string; time: string; guests: number };
+export function ReservationForm({ settings, terms, content, initial }: { settings: PublicData["booking"]; terms: string; content: SiteContent; initial?: InitialSelection }) {
   const [step, setStep] = useState(1);
-  const [date, setDate] = useState(settings.tomorrow);
-  const [guests, setGuests] = useState(2);
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState(initial?.date || settings.tomorrow);
+  const [guests, setGuests] = useState(initial?.guests || 2);
+  const [time, setTime] = useState(initial?.time || "");
   const [method, setMethod] = useState("ON_SITE");
   const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,20 +25,21 @@ export function ReservationForm({ settings, terms, content }: { settings: Public
   const [requestKey] = useState(() => typeof window !== "undefined" ? crypto.randomUUID() : "");
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/availability?date=${date}&guests=${guests}`, { signal: controller.signal }).then(async response => {
+    fetch(`/api/availability?date=${date}&guests=${guests}${initial ? `&tableId=${encodeURIComponent(initial.tableId)}` : ""}`, { signal: controller.signal }).then(async response => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       setSlots(result.slots); setLoading(false);
+      setTime(current => result.slots.some((slot: { time: string; available: boolean }) => slot.time === current && slot.available) ? current : "");
     }).catch(error => { if (error.name !== "AbortError") { setError("Impossible de charger les disponibilites."); setLoading(false); } });
     return () => controller.abort();
-  }, [date, guests]);
+  }, [date, guests, initial]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
-    if (step === 1) { if (!time) return setError("Choisissez un horaire disponible."); setStep(2); return; }
+    if (step === 1) { if (loading || !slots.some(slot => slot.time === time && slot.available)) return setError("Choisissez un horaire disponible."); setStep(2); return; }
     setBusy(true);
     const fields = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      const response = await fetch("/api/reservations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...fields, date, time, guests, method, requestKey: requestKey || crypto.randomUUID(), consent: fields.consent === "on" }) });
+      const response = await fetch("/api/reservations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...fields, date, time, guests, method, tableId: initial?.tableId, requestKey: requestKey || crypto.randomUUID(), consent: fields.consent === "on" }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       setReference(result.reference);
@@ -47,6 +49,7 @@ export function ReservationForm({ settings, terms, content }: { settings: Public
   if (reference) return <div className="booking-success"><CheckCircle2 size={44}/><p className="eyebrow">DEMANDE ENREGISTREE</p><h2>A tres bientot.</h2><p>Notre equipe vous appellera pour valider votre table. Votre demande est en attente d&apos;appel.</p><div className="booking-reference">{reference}</div><p>{dateLabel(`${date}T12:00:00`, "dd/MM/yyyy")} · {time} · {guests} personnes</p><p className="muted">Paiement au restaurant. Aucune somme n&apos;a ete prelevee.</p><Link className="button blue" href="/">Retour a l&apos;accueil <ArrowRight size={16}/></Link></div>;
   const price = calculatePrice(settings.onlineAmount * guests, method, settings.discountEnabled, settings.discountPercent);
   return <div className="reservation-layout"><form onSubmit={submit} className="reservation-form">
+    {initial && <p className="booking-table-selection"><Utensils size={18}/> Table souhaitee : <strong>{initial.tableName}</strong> · <Link href="/salle">Changer de table</Link></p>}
     <div className="booking-steps"><span className={step === 1 ? "active" : "done"}><b>{step > 1 ? <Check size={15}/> : "01"}</b> Votre table</span><div/><span className={step === 2 ? "active" : ""}><b>02</b> Vos informations</span></div>
     <div hidden={step !== 1}><h2>Une place pour vous.</h2><p className="muted">Choisissez votre moment.</p><div className="form-grid">
       <BookingDatePicker value={date} minimum={settings.today} maximum={settings.lastDate} onChange={next => { setDate(next); setTime(""); setLoading(true); setError(""); }}/>
